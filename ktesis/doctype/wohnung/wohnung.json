@@ -1,0 +1,130 @@
+{
+  "actions": [],
+  "allow_rename": 1,
+  "autoname": "format:WHG-{####}",
+  "creation": "2026-04-27 14:00:00.000000",
+  "doctype": "DocType",
+  "engine": "InnoDB",
+  "fields": [
+    {
+      "fieldname": "bezeichnung",
+      "fieldtype": "Data",
+      "in_list_view": 1,
+      "label": "Bezeichnung",
+      "reqd": 1
+    },
+    {
+      "fieldname": "strasse",
+      "fieldtype": "Data",
+      "label": "Stra\u00dfe"
+    },
+    {
+      "fieldname": "hausnummer",
+      "fieldtype": "Data",
+      "label": "Hausnummer"
+    },
+    {
+      "fieldname": "plz",
+      "fieldtype": "Data",
+      "label": "PLZ"
+    },
+    {
+      "fieldname": "ort",
+      "fieldtype": "Data",
+      "label": "Ort"
+    },
+    {
+      "default": "Deutschland",
+      "fieldname": "land",
+      "fieldtype": "Data",
+      "label": "Land"
+    },
+    {
+      "fieldname": "wohnflaeche",
+      "fieldtype": "Float",
+      "label": "Wohnfl\u00e4che (m\u00b2)"
+    },
+    {
+      "fieldname": "zimmer",
+      "fieldtype": "Float",
+      "label": "Zimmeranzahl"
+    },
+    {
+      "fieldname": "baujahr",
+      "fieldtype": "Int",
+      "label": "Baujahr"
+    },
+    {
+      "fieldname": "kaufpreis",
+      "fieldtype": "Currency",
+      "label": "Kaufpreis"
+    },
+    {
+      "fieldname": "kaufdatum",
+      "fieldtype": "Date",
+      "label": "Kaufdatum"
+    },
+    {
+      "fieldname": "kauf_wert",
+      "fieldtype": "Currency",
+      "label": "Kauf-/Einstandswert"
+    },
+    {
+      "fieldname": "aktueller_wert",
+      "fieldtype": "Currency",
+      "label": "Gesch\u00e4tzter aktueller Wert"
+    },
+    {
+      "fieldname": "wohnungstyp",
+      "fieldtype": "Select",
+      "label": "Wohnungstyp",
+      "options": "Eigentumswohnung\nReihenhaus\nEinfamilienhaus\nMehrfamilienhaus\nGewerbe"
+    },
+    {
+      "fieldname": "notizen",
+      "fieldtype": "Text",
+      "label": "Notizen"
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Bewohnt\nVermietet\nLeerstehend\nVerkauft",
+      "reqd": 1
+    },
+    {
+      "fieldname": "abschreibungen",
+      "fieldtype": "Table",
+      "label": "Abschreibungen",
+      "options": "Abschreibung"
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-04-27 16:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Ktesis",
+  "name": "Wohnung",
+  "naming_rule": "Expression",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "title_field": "bezeichnung",
+  "track_changes": 1
+}

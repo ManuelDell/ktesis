@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ktesis Dashboard</title>
+    <script type="module" crossorigin src="/assets/ktesis/frontend/assets/index-CN_ZMTqp.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/ktesis/frontend/assets/index-zWP72NAu.css">
+  </head>
+  <body>
+    <div id="app"></div>
+    <script>
+      {% for key in boot %}
+      window["{{ key }}"] = {{ boot[key] | tojson }};
+      {% endfor %}
+    </script>
+  
+          <script>
+              {% for key in boot %}
+              window["{{ key }}"] = {{ boot[key] | tojson }};
+              {% endfor %}
+          </script>
+          </body>
+          
+</html>

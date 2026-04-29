@@ -1,0 +1,324 @@
+@import 'frappe-ui/style.css';
+
+/* =====================================================================
+   Ktesis — Brand Variables (Herbst Design System)
+   Überschreibt frappe-ui CSS-Variablen mit warmen Herbstfarben
+   ===================================================================== */
+
+html {
+  font-feature-settings: 'calt' 1, 'cv01' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1;
+}
+html, body, #app { height: 100%; overflow: hidden; }
+body { -webkit-tap-highlight-color: transparent; margin: 0; }
+
+/* Warme Graustufen + Brand Colors */
+:root {
+  --ink-gray-1: #e7e0d7;
+  --ink-gray-2: #d6cfc6;
+  --ink-gray-3: #bfb7ad;
+  --ink-gray-4: #a8a29e;
+  --ink-gray-5: #918b86;
+  --ink-gray-6: #78716c;
+  --ink-gray-7: #605c57;
+  --ink-gray-8: #44403c;
+  --ink-gray-9: #292524;
+
+  --surface-white: #faf6f1;
+  --surface-gray-1: #f5f0eb;
+  --surface-gray-2: #ece5dd;
+  --surface-gray-3: #e0d8ce;
+  --surface-gray-4: #d0c8be;
+  --surface-gray-5: #605c57;
+  --surface-gray-6: #44403c;
+  --surface-gray-7: #292524;
+  --surface-selected: #f0e6da;
+
+  --outline-gray-1: #ece5dd;
+  --outline-gray-2: #e0d8ce;
+  --outline-gray-3: #d0c8be;
+  --outline-gray-4: #bfb7ad;
+  --outline-gray-5: #44403c;
+
+  --ink-amber-2: #c45c26;
+  --ink-amber-3: #a84a1c;
+  --surface-amber-1: #fdf2ec;
+  --surface-amber-2: #fce5d7;
+  --surface-amber-3: #f8d0b8;
+  --outline-amber-1: #f8d0b8;
+  --outline-amber-2: #e8b89a;
+
+  --ink-green-2: #7a8b3e;
+  --ink-green-3: #5e6d2e;
+  --surface-green-1: #f4f6ec;
+  --surface-green-2: #e8edd6;
+  --surface-green-3: #d4deb5;
+  --outline-green-1: #d4deb5;
+  --outline-green-2: #c8d4a0;
+
+  --ink-red-2: #a0522d;
+  --ink-red-3: #7a3e22;
+  --ink-red-4: #a0522d;
+  --ink-red-5: #7a3e22;
+  --ink-red-6: #7a3e22;
+  --surface-red-1: #fdf2ec;
+  --surface-red-2: #fce5d7;
+  --surface-red-3: #f8d0b8;
+  --surface-red-4: #f0c0a0;
+  --surface-red-5: #a0522d;
+  --outline-red-1: #f0c0a0;
+  --outline-red-2: #e8b89a;
+  --outline-red-3: #d4a080;
+
+  /* Sidebar chrome (not part of semantic system) */
+  --kt-sidebar-bg: #1c1917;
+  --kt-sidebar-text: #a8a29e;
+  --kt-sidebar-hover: #292524;
+  --kt-sidebar-active: #292524;
+  --kt-accent: #c45c26;
+  --kt-accent-hover: #a84a1c;
+  --kt-accent-light: #fdf2ec;
+}
+
+/* =====================================================================
+   App Shell + Sidebar (Chrome — minimal, not semantic)
+   ===================================================================== */
+.kt-app {
+  display: flex;
+  height: 100vh;
+  background: var(--surface-white);
+  color: var(--ink-gray-9);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.kt-main-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.kt-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--surface-white);
+}
+
+.kt-screen {
+  max-width: 1024px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+}
+
+/* Sidebar — warmes Dunkel, Gameplan-Style */
+.kt-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--kt-sidebar-bg);
+  color: var(--kt-sidebar-text);
+  border-right: 1px solid rgba(255,255,255,.06);
+  overflow: hidden;
+  transition: width 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kt-sidebar.is-collapsed { width: 64px; }
+
+.kt-sb-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  min-height: 48px;
+}
+.kt-sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 120ms;
+  cursor: pointer;
+  text-decoration: none;
+}
+.kt-sb-brand:hover { background: rgba(255,255,255,.05); }
+.kt-sb-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.kt-sb-brand-name { color: #fafaf9; font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+.kt-sb-brand-sub  { color: #78716c; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.kt-sb-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  color: #78716c;
+  flex-shrink: 0;
+  transition: background 120ms, color 120ms;
+}
+.kt-sb-collapse:hover { background: rgba(255,255,255,.06); color: #fafaf9; }
+
+.kt-sb-nav {
+  padding: 6px 8px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.kt-sb-section {
+  padding: 10px 8px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #78716c;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.kt-sidebar.is-collapsed .kt-sb-section { display: none; }
+
+.kt-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: #a8a29e;
+  font-size: 13px;
+  font-weight: 450;
+  transition: background 120ms, color 120ms;
+  position: relative;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+.kt-nav-item:hover { background: var(--kt-sidebar-hover); color: #fafaf9; }
+.kt-nav-item.is-active {
+  background: var(--kt-sidebar-active);
+  color: #fafaf9;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+}
+.kt-sidebar.is-collapsed .kt-nav-item { justify-content: center; padding: 0; }
+
+.kt-sb-foot {
+  padding: 6px 8px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kt-sb-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background 120ms;
+}
+.kt-sb-user:hover { background: var(--kt-sidebar-hover); }
+.kt-sb-user-name { color: #fafaf9; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kt-sb-user-role { color: #78716c; font-size: 11px; }
+.kt-sidebar.is-collapsed .kt-sb-user { justify-content: center; }
+
+.kt-sb-theme-btn,
+.kt-sb-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 5px;
+  color: #a8a29e;
+  font-size: 12px;
+  font-weight: 450;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.kt-sb-theme-btn:hover,
+.kt-sb-logout:hover { background: var(--kt-sidebar-hover); color: #fafaf9; }
+.kt-sidebar.is-collapsed .kt-sb-theme-btn,
+.kt-sidebar.is-collapsed .kt-sb-logout { justify-content: center; }
+
+.kt-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--kt-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  user-select: none;
+  overflow: hidden;
+}
+.kt-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Topbar */
+.kt-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 20px;
+  background: var(--surface-white);
+  border-bottom: 1px solid var(--outline-gray-1);
+  flex-shrink: 0;
+}
+.kt-topbar-left  { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.kt-topbar-right { display: flex; align-items: center; gap: 6px; }
+.kt-topbar-title { font-size: 15px; font-weight: 500; color: var(--ink-gray-9); margin: 0; }
+
+/* Animationen */
+.kt-screen-enter {
+  animation: ktFadeIn .25s ease;
+}
+@keyframes ktFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar */
+.kt-content::-webkit-scrollbar { width: 6px; }
+.kt-content::-webkit-scrollbar-track { background: transparent; }
+.kt-content::-webkit-scrollbar-thumb { background: var(--outline-gray-2); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .kt-sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+  }
+  .kt-sidebar.is-open { transform: translateX(0); }
+  .kt-screen { padding: 16px 16px 40px; }
+}

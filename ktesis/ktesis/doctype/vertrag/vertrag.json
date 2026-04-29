@@ -1,0 +1,143 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:VTR-{####}",
+ "creation": "2026-04-27 18:21:06.321713",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "titel",
+  "vertragstyp",
+  "referenz_doctype",
+  "referenz_name",
+  "vertragspartner",
+  "vertragsnummer",
+  "vertragsbeginn",
+  "vertragsende",
+  "kuendigungsfrist",
+  "kosten_monatlich",
+  "kosten_jaehrlich",
+  "zahlungsrhythmus",
+  "pdf_dokument",
+  "notizen",
+  "aktiv"
+ ],
+ "fields": [
+  {
+   "fieldname": "titel",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Titel",
+   "reqd": 1
+  },
+  {
+   "fieldname": "vertragstyp",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Vertragstyp",
+   "options": "Versicherung\nDarlehen\nMiete\nKaufvertrag\nWartung\nSonstiges",
+   "reqd": 1
+  },
+  {
+   "fieldname": "referenz_doctype",
+   "fieldtype": "Select",
+   "label": "Referenz Typ",
+   "options": "Fahrzeug\nWohnung"
+  },
+  {
+   "fieldname": "referenz_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Referenz",
+   "options": "referenz_doctype"
+  },
+  {
+   "fieldname": "vertragspartner",
+   "fieldtype": "Data",
+   "label": "Vertragspartner"
+  },
+  {
+   "fieldname": "vertragsnummer",
+   "fieldtype": "Data",
+   "label": "Vertragsnummer"
+  },
+  {
+   "fieldname": "vertragsbeginn",
+   "fieldtype": "Date",
+   "label": "Vertragsbeginn"
+  },
+  {
+   "fieldname": "vertragsende",
+   "fieldtype": "Date",
+   "label": "Vertragsende"
+  },
+  {
+   "fieldname": "kuendigungsfrist",
+   "fieldtype": "Data",
+   "label": "K\u00fcndigungsfrist"
+  },
+  {
+   "fieldname": "kosten_monatlich",
+   "fieldtype": "Currency",
+   "label": "Kosten monatlich"
+  },
+  {
+   "fieldname": "kosten_jaehrlich",
+   "fieldtype": "Currency",
+   "label": "Kosten j\u00e4hrlich"
+  },
+  {
+   "fieldname": "zahlungsrhythmus",
+   "fieldtype": "Select",
+   "label": "Zahlungsrhythmus",
+   "options": "Monatlich\nViertelj\u00e4hrlich\nHalbj\u00e4hrlich\nJ\u00e4hrlich\nEinmalig"
+  },
+  {
+   "fieldname": "pdf_dokument",
+   "fieldtype": "Attach",
+   "label": "Vertrags-PDF"
+  },
+  {
+   "fieldname": "notizen",
+   "fieldtype": "Text",
+   "label": "Notizen"
+  },
+  {
+   "default": "1",
+   "fieldname": "aktiv",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Aktiv"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-27 18:21:06.321713",
+ "modified_by": "Administrator",
+ "module": "Ktesis",
+ "name": "Vertrag",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "titel",
+ "track_changes": 1
+}

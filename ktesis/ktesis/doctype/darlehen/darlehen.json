@@ -1,0 +1,157 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:DLH-{####}",
+ "creation": "2026-04-27 18:21:06.028109",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bezeichnung",
+  "wohnung",
+  "darlehensgeber",
+  "darlehensnummer",
+  "darlehensbetrag",
+  "zinssatz",
+  "tilgungssatz",
+  "monatliche_rate",
+  "rate_inkl_zins_tilgung",
+  "laufzeit_jahre",
+  "beginn",
+  "ende",
+  "restschuld",
+  "tilgungsfreie_jahre",
+  "sollzinsbindung_bis",
+  "pdf_dokument",
+  "notizen",
+  "aktiv"
+ ],
+ "fields": [
+  {
+   "fieldname": "bezeichnung",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bezeichnung",
+   "reqd": 1
+  },
+  {
+   "fieldname": "wohnung",
+   "fieldtype": "Link",
+   "label": "Wohnung",
+   "options": "Wohnung"
+  },
+  {
+   "fieldname": "darlehensgeber",
+   "fieldtype": "Data",
+   "label": "Darlehensgeber"
+  },
+  {
+   "fieldname": "darlehensnummer",
+   "fieldtype": "Data",
+   "label": "Darlehensnummer"
+  },
+  {
+   "fieldname": "darlehensbetrag",
+   "fieldtype": "Currency",
+   "label": "Darlehensbetrag"
+  },
+  {
+   "fieldname": "zinssatz",
+   "fieldtype": "Percent",
+   "label": "Zinssatz (%)"
+  },
+  {
+   "fieldname": "tilgungssatz",
+   "fieldtype": "Percent",
+   "label": "Tilgungssatz (%)"
+  },
+  {
+   "fieldname": "monatliche_rate",
+   "fieldtype": "Currency",
+   "label": "Monatliche Rate"
+  },
+  {
+   "default": "1",
+   "fieldname": "rate_inkl_zins_tilgung",
+   "fieldtype": "Check",
+   "label": "Rate inkl. Zins + Tilgung"
+  },
+  {
+   "fieldname": "laufzeit_jahre",
+   "fieldtype": "Int",
+   "label": "Laufzeit (Jahre)"
+  },
+  {
+   "fieldname": "beginn",
+   "fieldtype": "Date",
+   "label": "Beginn"
+  },
+  {
+   "fieldname": "ende",
+   "fieldtype": "Date",
+   "label": "Geplantes Ende"
+  },
+  {
+   "fieldname": "restschuld",
+   "fieldtype": "Currency",
+   "label": "Aktuelle Restschuld"
+  },
+  {
+   "fieldname": "tilgungsfreie_jahre",
+   "fieldtype": "Int",
+   "label": "Tilgungsfreie Jahre"
+  },
+  {
+   "fieldname": "sollzinsbindung_bis",
+   "fieldtype": "Date",
+   "label": "Sollzinsbindung bis"
+  },
+  {
+   "fieldname": "pdf_dokument",
+   "fieldtype": "Attach",
+   "label": "Darlehensvertrag (PDF)"
+  },
+  {
+   "fieldname": "notizen",
+   "fieldtype": "Text",
+   "label": "Notizen"
+  },
+  {
+   "default": "1",
+   "fieldname": "aktiv",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Aktiv"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-27 18:21:06.028109",
+ "modified_by": "Administrator",
+ "module": "Ktesis",
+ "name": "Darlehen",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "bezeichnung",
+ "track_changes": 1
+}

@@ -1,0 +1,162 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:FZG-{####}",
+ "creation": "2026-04-27 18:21:04.946187",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "kennzeichen",
+  "marke",
+  "modell",
+  "baujahr",
+  "farbe",
+  "fin",
+  "erstzulassung",
+  "kaufpreis",
+  "kaufdatum",
+  "kilometerstand_kauf",
+  "aktueller_km_stand",
+  "kraftstoff",
+  "leistung_ps",
+  "hubraum",
+  "schein_bild",
+  "fahrzeug_bild",
+  "notizen",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "kennzeichen",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Kennzeichen",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "marke",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Marke",
+   "reqd": 1
+  },
+  {
+   "fieldname": "modell",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Modell",
+   "reqd": 1
+  },
+  {
+   "fieldname": "baujahr",
+   "fieldtype": "Int",
+   "label": "Baujahr"
+  },
+  {
+   "fieldname": "farbe",
+   "fieldtype": "Data",
+   "label": "Farbe"
+  },
+  {
+   "fieldname": "fin",
+   "fieldtype": "Data",
+   "label": "FIN / VIN"
+  },
+  {
+   "fieldname": "erstzulassung",
+   "fieldtype": "Date",
+   "label": "Erstzulassung"
+  },
+  {
+   "fieldname": "kaufpreis",
+   "fieldtype": "Currency",
+   "label": "Kaufpreis"
+  },
+  {
+   "fieldname": "kaufdatum",
+   "fieldtype": "Date",
+   "label": "Kaufdatum"
+  },
+  {
+   "fieldname": "kilometerstand_kauf",
+   "fieldtype": "Int",
+   "label": "KM-Stand beim Kauf"
+  },
+  {
+   "fieldname": "aktueller_km_stand",
+   "fieldtype": "Int",
+   "label": "Aktueller KM-Stand"
+  },
+  {
+   "fieldname": "kraftstoff",
+   "fieldtype": "Select",
+   "label": "Kraftstoff",
+   "options": "Benzin\nDiesel\nElektro\nHybrid\nPlug-in-Hybrid"
+  },
+  {
+   "fieldname": "leistung_ps",
+   "fieldtype": "Int",
+   "label": "Leistung (PS)"
+  },
+  {
+   "fieldname": "hubraum",
+   "fieldtype": "Float",
+   "label": "Hubraum (ccm)"
+  },
+  {
+   "fieldname": "schein_bild",
+   "fieldtype": "Attach Image",
+   "label": "Fahrzeugschein (Bild)"
+  },
+  {
+   "fieldname": "fahrzeug_bild",
+   "fieldtype": "Attach Image",
+   "label": "Fahrzeugbild"
+  },
+  {
+   "fieldname": "notizen",
+   "fieldtype": "Text",
+   "label": "Notizen"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Aktiv\nVerkauft\nEntsorgt",
+   "reqd": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-27 18:21:04.946187",
+ "modified_by": "Administrator",
+ "module": "Ktesis",
+ "name": "Fahrzeug",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "kennzeichen",
+ "track_changes": 1
+}

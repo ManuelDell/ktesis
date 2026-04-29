@@ -1,0 +1,156 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:BKT-{####}",
+ "creation": "2026-04-27 18:20:27.865821",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "bezeichnung",
+  "bank",
+  "iban",
+  "bic",
+  "blz",
+  "fints_url",
+  "kontonummer",
+  "kontostand_manuell",
+  "kontostand_live",
+  "kontostand_abgerufen_am",
+  "kontotyp",
+  "waehrung",
+  "fints_aktiv",
+  "fints_tan_verfahren",
+  "fints_tan_medium",
+  "notizen",
+  "aktiv"
+ ],
+ "fields": [
+  {
+   "fieldname": "bezeichnung",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bezeichnung",
+   "reqd": 1
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Bank"
+  },
+  {
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "IBAN"
+  },
+  {
+   "fieldname": "bic",
+   "fieldtype": "Data",
+   "label": "BIC"
+  },
+  {
+   "fieldname": "blz",
+   "fieldtype": "Data",
+   "label": "Bankleitzahl (BLZ)"
+  },
+  {
+   "fieldname": "fints_url",
+   "fieldtype": "Data",
+   "label": "FinTS-Server URL"
+  },
+  {
+   "fieldname": "kontonummer",
+   "fieldtype": "Data",
+   "label": "Kontonummer"
+  },
+  {
+   "fieldname": "kontostand_manuell",
+   "fieldtype": "Currency",
+   "label": "Kontostand (manuell)"
+  },
+  {
+   "fieldname": "kontostand_live",
+   "fieldtype": "Currency",
+   "label": "Kontostand (live)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kontostand_abgerufen_am",
+   "fieldtype": "Datetime",
+   "label": "Zuletzt abgerufen am",
+   "read_only": 1
+  },
+  {
+   "fieldname": "kontotyp",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Kontotyp",
+   "options": "Girokonto\nTagesgeld\nSparbuch\nDepot\nKreditkarte"
+  },
+  {
+   "default": "EUR",
+   "fieldname": "waehrung",
+   "fieldtype": "Data",
+   "label": "W\u00e4hrung"
+  },
+  {
+   "default": "0",
+   "fieldname": "fints_aktiv",
+   "fieldtype": "Check",
+   "label": "FinTS aktiv"
+  },
+  {
+   "fieldname": "fints_tan_verfahren",
+   "fieldtype": "Data",
+   "label": "FinTS TAN-Verfahren"
+  },
+  {
+   "fieldname": "fints_tan_medium",
+   "fieldtype": "Data",
+   "label": "FinTS TAN-Medium"
+  },
+  {
+   "fieldname": "notizen",
+   "fieldtype": "Text",
+   "label": "Notizen"
+  },
+  {
+   "default": "1",
+   "fieldname": "aktiv",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Aktiv"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-04-27 18:20:27.865821",
+ "modified_by": "Administrator",
+ "module": "Ktesis",
+ "name": "Bankkonto",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "bezeichnung",
+ "track_changes": 1
+}

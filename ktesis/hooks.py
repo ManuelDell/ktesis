@@ -11,15 +11,14 @@ app_license = "mit"
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "ktesis",
-# 		"logo": "/assets/ktesis/logo.png",
-# 		"title": "Ktesis",
-# 		"route": "/ktesis",
-# 		"has_permission": "ktesis.api.permission.has_app_permission"
-# 	}
-# ]
+add_to_apps_screen = [
+	{
+		"name": "ktesis",
+		"logo": "/assets/ktesis/logo.svg",
+		"title": "Ktesis",
+		"route": "/ktesis",
+	}
+]
 
 # Includes in <head>
 # ------------------
@@ -238,7 +237,15 @@ app_license = "mit"
 # 	"ktesis.auth.validate"
 # ]
 
-# Automatically update python controller files with type annotations for this app.
+# Whitelist API methods for the Ktesis SPA
+whitelist_doctype_events = {
+    "Fahrzeug": ["get_vehicles", "create_vehicle", "update_vehicle", "delete_vehicle"],
+    "Wohnung": ["get_properties", "create_property", "update_property", "delete_property"],
+    "Vertrag": ["get_contracts", "create_contract", "update_contract", "delete_contract"],
+    "Darlehen": ["get_loans", "create_loan", "update_loan", "delete_loan", "calculate_amortization_schedule"],
+    "Bankkonto": ["get_bank_accounts", "create_bank_account", "update_bank_account", "delete_bank_account"],
+}
+
 # export_python_type_annotations = True
 
 # default_log_clearing_doctypes = {
