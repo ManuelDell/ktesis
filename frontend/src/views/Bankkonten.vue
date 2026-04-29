@@ -49,7 +49,10 @@
               </div>
               <div class="mt-2 text-sm">
                 <span class="text-gray-500">Kontostand:</span>
-                <span class="ml-1 font-medium">{{ formatCurrency(item.kontostand_manuell) }}</span>
+                <span class="ml-1 font-medium">
+                  {{ formatCurrency(item.kontostand_live ?? item.kontostand_manuell) }}
+                </span>
+                <span v-if="item.kontostand_live != null" class="ml-1 text-xs text-green-600" title="Live-Kontostand via FinTS">●</span>
               </div>
             </div>
             <div class="flex items-center gap-2">

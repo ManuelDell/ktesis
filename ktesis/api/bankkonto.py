@@ -29,6 +29,7 @@ def create_bank_account():
 		"bic": data.get("bic"),
 		"blz": data.get("blz"),
 		"fints_url": data.get("fints_url"),
+		"fints_login": data.get("fints_login"),
 		"kontonummer": data.get("kontonummer"),
 		"kontostand_manuell": data.get("kontostand_manuell"),
 		"kontotyp": data.get("kontotyp"),
@@ -37,6 +38,8 @@ def create_bank_account():
 		"aktiv": data.get("aktiv", 1),
 	})
 	doc.insert()
+	if data.get("fints_pin"):
+		frappe.utils.password.update_password("Bankkonto", doc.name, "fints_pin", data["fints_pin"])
 	return doc.as_dict()
 
 
@@ -46,13 +49,15 @@ def update_bank_account(name):
 	doc = frappe.get_doc("Bankkonto", name)
 	data = frappe.local.form_dict
 
-	for field in ["bezeichnung", "bank", "iban", "bic", "blz", "fints_url",
+	for field in ["bezeichnung", "bank", "iban", "bic", "blz", "fints_url", "fints_login",
 	              "kontonummer", "kontostand_manuell", "kontotyp", "waehrung",
 	              "fints_aktiv", "aktiv"]:
 		if field in data:
 			doc.set(field, data.get(field))
 
 	doc.save()
+	if data.get("fints_pin"):
+		frappe.utils.password.update_password("Bankkonto", name, "fints_pin", data["fints_pin"])
 	return doc.as_dict()
 
 

@@ -20,6 +20,8 @@
   "kontotyp",
   "waehrung",
   "fints_aktiv",
+  "fints_login",
+  "fints_pin",
   "fints_tan_verfahren",
   "fints_tan_medium",
   "notizen",
@@ -99,6 +101,18 @@
    "fieldname": "fints_aktiv",
    "fieldtype": "Check",
    "label": "FinTS aktiv"
+  },
+  {
+   "depends_on": "fints_aktiv",
+   "fieldname": "fints_login",
+   "fieldtype": "Data",
+   "label": "Online-Banking Loginname"
+  },
+  {
+   "depends_on": "fints_aktiv",
+   "fieldname": "fints_pin",
+   "fieldtype": "Password",
+   "label": "Online-Banking PIN"
   },
   {
    "fieldname": "fints_tan_verfahren",
