@@ -203,6 +203,8 @@ const syncStatusLabel = ref('Verbinde…')
 const syncError = ref(null)
 const syncSuccess = ref(null)
 let pollTimer = null
+let pollCount = 0
+const POLL_TIMEOUT_COUNT = 30  // 30 × 2s = 60s timeout for "pending" state
 
 // TAN dialog state
 const showTanDialog = ref(false)
@@ -346,6 +348,7 @@ async function startSync() {
 }
 
 function startPoll() {
+  pollCount = 0
   pollTimer = setInterval(pollStatus, 2000)
 }
 
@@ -358,6 +361,16 @@ function clearPoll() {
 
 async function pollStatus() {
   if (!syncJobId.value) return
+
+  pollCount++
+  // If still "pending" after timeout, worker likely crashed before writing state
+  if (pollCount > POLL_TIMEOUT_COUNT) {
+    clearPoll()
+    syncing.value = false
+    syncError.value = 'Keine Antwort vom Worker. Bitte prüfen ob python-fints installiert ist und der Worker läuft.'
+    return
+  }
+
   try {
     const state = await call('ktesis.api.fints.get_fints_sync_status', { job_id: syncJobId.value })
 
