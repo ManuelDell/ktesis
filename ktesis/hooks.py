@@ -237,15 +237,6 @@ add_to_apps_screen = [
 # 	"ktesis.auth.validate"
 # ]
 
-# Whitelist API methods for the Ktesis SPA
-whitelist_doctype_events = {
-    "Fahrzeug": ["get_vehicles", "create_vehicle", "update_vehicle", "delete_vehicle"],
-    "Wohnung": ["get_properties", "create_property", "update_property", "delete_property"],
-    "Vertrag": ["get_contracts", "create_contract", "update_contract", "delete_contract"],
-    "Darlehen": ["get_loans", "create_loan", "update_loan", "delete_loan", "calculate_amortization_schedule"],
-    "Bankkonto": ["get_bank_accounts", "create_bank_account", "update_bank_account", "delete_bank_account"],
-}
-
 # export_python_type_annotations = True
 
 # default_log_clearing_doctypes = {

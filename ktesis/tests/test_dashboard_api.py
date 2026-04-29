@@ -5,11 +5,11 @@ from frappe.tests.utils import FrappeTestCase
 class TestDashboardAPI(FrappeTestCase):
     def test_get_dashboard_stats_structure(self):
         """get_dashboard_stats muss alle erwarteten Felder zurückgeben."""
-        from ktesis.api.__init__ import get_dashboard_stats
+        from ktesis.api import get_dashboard_stats
         result = get_dashboard_stats()
         expected_keys = [
             "fahrzeuge", "wohnungen", "aktive_vertraege",
-            "bank_saldo", "darlehensbetrag", "restschuld", "monate_kosten"
+            "bank_saldo", "darlehensbetrag", "restschuld", "monatliche_kosten"
         ]
         for key in expected_keys:
             self.assertIn(key, result, f"Feld '{key}' fehlt in get_dashboard_stats")
