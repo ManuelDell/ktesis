@@ -114,7 +114,8 @@ def start_fints_sync(name):
 		"ktesis.api.fints._run_fints_sync",
 		queue="short",
 		timeout=300,
-		job_id=job_id,
+		job_id=job_id,        # sets the RQ job ID (not forwarded to function)
+		fints_job_id=job_id,  # passed explicitly to our function
 		bankkonto_name=name,
 		blz=doc.blz,
 		login=doc.fints_login,
@@ -151,8 +152,9 @@ def submit_tan(job_id, tan):
 	return {"status": "tan_submitted"}
 
 
-def _run_fints_sync(job_id, bankkonto_name, blz, login, pin, fints_url, kontonummer):
+def _run_fints_sync(fints_job_id, bankkonto_name, blz, login, pin, fints_url, kontonummer):
 	"""Background job: full FinTS sync including optional TAN interaction."""
+	job_id = fints_job_id
 	cache_key = f"fints_job_{job_id}"
 
 	def set_state(state):
@@ -160,14 +162,21 @@ def _run_fints_sync(job_id, bankkonto_name, blz, login, pin, fints_url, kontonum
 
 	try:
 		from fints.client import FinTS3PinTanClient, NeedTANResponse
-		from fints.utils import minimal_interactive_cli_bootstrap
 
 		set_state({"status": "connecting", "name": bankkonto_name})
 
 		client = FinTS3PinTanClient(blz, login, pin, fints_url)
 
 		with client:
-			minimal_interactive_cli_bootstrap(client)
+			# Non-interactive TAN mechanism selection (minimal_interactive_cli_bootstrap
+			# blocks on stdin when multiple mechanisms are available)
+			if client.init_tan_response:
+				set_state({"status": "error", "message": "Bank erfordert TAN zur Initialisierung – nicht unterstützt."})
+				return
+			mechanisms = client.get_tan_mechanisms()
+			if mechanisms:
+				client.set_tan_mechanism(list(mechanisms.values())[0])
+
 			set_state({"status": "connected", "name": bankkonto_name})
 
 			accounts = client.get_sepa_accounts()
@@ -219,13 +228,14 @@ def _run_fints_sync(job_id, bankkonto_name, blz, login, pin, fints_url, kontonum
 					return
 				transactions_result = client.send_response(transactions_result, tan)
 
-			_save_transactions(bankkonto_name, account, transactions_result)
+			# _save_transactions consumes the iterator – capture count from it
+			inserted = _save_transactions(bankkonto_name, account, transactions_result)
 			_save_balance(bankkonto_name, balance)
 
 			set_state({
 				"status": "completed",
 				"balance": balance,
-				"transactions_count": len(list(transactions_result)),
+				"transactions_count": inserted,
 			})
 
 	except ImportError:
