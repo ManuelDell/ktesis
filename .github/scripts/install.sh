@@ -24,7 +24,7 @@ bench new-site test_site \
   --db-root-username root \
   --db-root-password "" \
   --admin-password admin \
-  --no-mariadb-socket
+  --db-host 127.0.0.1
 
 echo "=== ktesis aus lokalem Checkout installieren ==="
 bench get-app ktesis "$GITHUB_WORKSPACE"
