@@ -20,7 +20,15 @@ FLUSH PRIVILEGES;
 SQL
 
 echo "=== Site anlegen ==="
-printf '{"db_host":"127.0.0.1","db_port":3306}\n' > sites/common_site_config.json
+python3 -c "
+import json
+with open('sites/common_site_config.json') as f:
+    cfg = json.load(f)
+cfg['db_host'] = '127.0.0.1'
+cfg['db_port'] = 3306
+with open('sites/common_site_config.json', 'w') as f:
+    json.dump(cfg, f)
+"
 bench new-site test_site \
   --db-root-username root \
   --db-root-password "" \
