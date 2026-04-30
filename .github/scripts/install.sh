@@ -1,45 +1,36 @@
 #!/bin/bash
-
 set -e
 
-cd ~ || exit
+FRAPPE_BRANCH=${FRAPPE_BRANCH:-version-15}
+BENCH_PATH=$HOME/frappe-bench
 
-sudo apt-get update
-sudo apt-get install -y redis-server libmariadb-dev libffi-dev python3-dev libcups2-dev mariadb-client
+echo "=== Bench initialisieren (frappe $FRAPPE_BRANCH) ==="
+bench init \
+  --frappe-branch "$FRAPPE_BRANCH" \
+  --skip-assets \
+  "$BENCH_PATH"
 
-echo "Installing frappe-bench..."
-pip install --upgrade pip
-pip install frappe-bench
+cd "$BENCH_PATH"
 
-echo "Initializing bench (skip assets — backend-only CI)..."
-bench init frappe-bench \
-  --frappe-branch "${FRAPPE_BRANCH:-version-15}" \
-  --python "$(which python)" \
-  --skip-assets
+echo "=== fints von GitHub installieren ==="
+env/bin/pip install git+https://github.com/raphaelm/python-fints.git
 
-cd ~/frappe-bench || exit
+echo "=== MariaDB-Benutzer anlegen ==="
+mysql -h 127.0.0.1 -u root << 'SQL'
+CREATE USER IF NOT EXISTS 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';
+GRANT ALL PRIVILEGES ON *.* TO 'test_frappe'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+SQL
 
-echo "Starting Redis on bench-configured ports..."
-redis-server config/redis_cache.conf --daemonize yes
-redis-server config/redis_queue.conf --daemonize yes
-sleep 2
-
-echo "Pre-installing fints von GitHub..."
-~/frappe-bench/env/bin/pip install git+https://github.com/raphaelm/python-fints.git
-
-echo "Installing app..."
-bench get-app ktesis "${GITHUB_WORKSPACE}"
-
-echo "Creating site..."
+echo "=== Site anlegen ==="
 bench new-site test_site \
-    --db-type mariadb \
-    --db-host 127.0.0.1 \
-    --db-root-username root \
-    --db-root-password "" \
-    --admin-password admin \
-    --no-mariadb-socket
+  --db-root-username root \
+  --db-root-password "" \
+  --admin-password admin \
+  --no-mariadb-socket
 
-echo "Installing app to site..."
+echo "=== ktesis aus lokalem Checkout installieren ==="
+bench get-app ktesis "$GITHUB_WORKSPACE"
 bench --site test_site install-app ktesis
 
-echo "Setup complete!"
+echo "=== Setup abgeschlossen ==="
