@@ -85,7 +85,11 @@ add_to_apps_screen = [
 # ------------
 
 # before_install = "ktesis.install.before_install"
-# after_install = "ktesis.install.after_install"
+after_install = "ktesis.install.after_install"
+
+# Bench CLI Commands
+# ------------------
+commands = ["ktesis.commands"]
 
 # Uninstallation
 # ------------

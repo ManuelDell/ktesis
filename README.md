@@ -17,6 +17,9 @@
 
 ---
 
+> **Development Stage** — Ktesis ist eine persönliche Vermögensverwaltung in aktiver Entwicklung.
+> Nicht für Produktionsumgebungen mit sensiblen Fremddaten geeignet.
+
 ## Features
 
 - **Dashboard** — KPI-Karten: Nettovermögen, Bankkonten, Darlehensrestschuld, monatliche Kosten
@@ -28,6 +31,7 @@
 - **Bankkonten** — Kontostände (manuell + FinTS-fähig), Buchungshistorie
 - **Anhänge** — Datei-Upload zu jedem Dokument
 - **Dark Mode** — Umschaltbar über die Sidebar
+- **HTTPS-Setup** *(experimentell)* — Self-signed SSL für lokalen Betrieb per Bench-Command
 
 ---
 
@@ -80,7 +84,70 @@ Das Ktesis-Icon erscheint auf dem Frappe Desk. Falls nicht:
 bench --site <deine-site> clear-cache
 ```
 
-Direkt erreichbar unter: `https://<deine-site>/ktesis`
+Direkt erreichbar unter: `http://<deine-site>/ktesis`
+
+---
+
+## HTTPS einrichten *(experimentell)*
+
+> **⚠ Development Stage** — Diese Funktion ist experimentell und nicht für Produktionsumgebungen
+> mit sensiblen Fremddaten geeignet. Self-signed Zertifikate bieten keine CA-Vertrauenskette;
+> Browser zeigen eine Zertifikatswarnung, die manuell bestätigt werden muss.
+
+Ktesis bringt einen Bench-Command mit, der automatisch:
+
+1. Ein self-signed RSA-4096-Zertifikat mit IP-SAN generiert (kein Domain-Name nötig)
+2. Eine nginx-Konfiguration nach `/etc/nginx/conf.d/ktesis-https.conf` schreibt
+3. `force_https` in der Site-Config aktiviert (alle Routen auf HTTPS)
+4. nginx validiert und neu lädt
+
+### Voraussetzungen
+
+- nginx installiert und aktiv
+- Root-Rechte (schreibt in `/etc/ssl/ktesis/` und `/etc/nginx/conf.d/`)
+- OpenSSL verfügbar
+
+### Ausführen
+
+```bash
+sudo bench setup-ktesis-https --site <deine-site>
+```
+
+Mit optionalen Parametern:
+
+```bash
+sudo bench setup-ktesis-https \
+  --site mysite.localhost \
+  --ip 192.168.1.100 \         # Standard: automatisch erkannt
+  --gunicorn-port 8000 \       # Standard: 8000
+  --socketio-port 9000 \       # Standard: 9000
+  --cert-dir /etc/ssl/ktesis \ # Standard: /etc/ssl/ktesis
+  --skip-nginx-reload          # nginx nicht automatisch neu laden
+```
+
+### Ergebnis
+
+Nach dem Command:
+
+- Ktesis erreichbar unter `https://<IP>/ktesis`
+- Frappe Desk erreichbar unter `https://<IP>/app`
+- Zertifikatswarnung im Browser **einmalig** bestätigen
+
+### Zertifikat erneuern
+
+```bash
+# Altes Zertifikat löschen und Command erneut ausführen
+sudo rm /etc/ssl/ktesis/server.{crt,key}
+sudo bench setup-ktesis-https --site <deine-site>
+```
+
+### Bekannte Einschränkungen
+
+- **Self-signed:** Browser zeigen Zertifikatswarnung — kein Let's Encrypt, keine CA
+- **IP-gebunden:** Zertifikat gilt für eine feste IP; bei IP-Wechsel neu generieren
+- **Keine Bench-Integration:** `bench setup nginx` überschreibt die Frappe-Config nicht, aber bei manuellem `bench setup nginx`-Aufruf die ktesis-nginx-Config separat prüfen
+- **Kein automatisches Renewal:** Zertifikat läuft nach 10 Jahren ab (kein Cronjob)
+- **Development only:** Für öffentliche Server Let's Encrypt + Domain verwenden
 
 ---
 
@@ -107,6 +174,8 @@ ktesis/
 │   │       ├── bankkonto/
 │   │       ├── bankbuchung/
 │   │       └── abschreibung/
+│   ├── commands.py              # Bench CLI: setup-ktesis-https (experimentell)
+│   ├── install.py               # after_install Hook
 │   ├── hooks.py                 # App-Konfiguration
 │   ├── permissions.py           # Zugriffsregeln
 │   └── www/ktesis.py            # SPA-Einstiegspunkt + Guest-Redirect
@@ -151,6 +220,8 @@ ktesis/
 ## Roadmap
 
 - [x] **Phase 1** — Design-Fundament (frappe-ui Semantic Colors, SPA-Layout)
+- [x] **Phase 1.x** — FinTS-Sicherheitsfixes (PIN-Queue, HTTPS-Validierung, Job-Eigentümer)
+- [x] **Phase 1.x** — HTTPS-Setup-Command `bench setup-ktesis-https` *(experimentell)*
 - [ ] **Phase 2** — Dashboard-Upgrade (Charts, Budget-Planung, PDF-Export)
 - [ ] **Phase 3** — Verträge 2.0 (Kündigungsassistent, Dokumenten-Safe)
 - [ ] **Phase 4** — Erweiterte Module (Investitionen, Altersvorsorge, Steuern)
