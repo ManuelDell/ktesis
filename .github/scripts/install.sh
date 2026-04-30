@@ -20,7 +20,7 @@ FLUSH PRIVILEGES;
 SQL
 
 echo "=== Site anlegen ==="
-bench set-config -g db_host 127.0.0.1
+printf '{"db_host":"127.0.0.1","db_port":3306}\n' > sites/common_site_config.json
 bench new-site test_site \
   --db-root-username root \
   --db-root-password "" \
