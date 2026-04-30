@@ -195,3 +195,7 @@ def setup_ktesis_https(site, ip, gunicorn_port, socketio_port, cert_dir, nginx_c
         "\n  Hinweis: Experimentelles Feature. Sicherheitshinweise in der README beachten.\n",
         fg="yellow",
     ))
+
+
+# Frappe bench helper discovery
+commands = [setup_ktesis_https]
