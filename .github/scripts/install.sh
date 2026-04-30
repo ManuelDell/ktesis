@@ -5,7 +5,7 @@ set -e
 cd ~ || exit
 
 sudo apt-get update
-sudo apt-get install -y redis-server libmariadb-dev libffi-dev python3-dev libcups2-dev
+sudo apt-get install -y redis-server libmariadb-dev libffi-dev python3-dev libcups2-dev mariadb-client
 
 echo "Installing frappe-bench..."
 pip install --upgrade pip
@@ -32,7 +32,7 @@ bench new-site test_site \
     --db-type mariadb \
     --db-host 127.0.0.1 \
     --db-root-username root \
-    --db-root-password root \
+    --db-root-password "" \
     --admin-password admin \
     --no-mariadb-socket
 
