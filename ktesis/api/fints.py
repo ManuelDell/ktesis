@@ -94,22 +94,28 @@ def start_fints_sync(name):
 		frappe.throw("FinTS ist für dieses Konto nicht aktiviert.")
 	if not doc.fints_url:
 		frappe.throw("Keine FinTS-URL konfiguriert.")
+	if not doc.fints_url.startswith("https://"):
+		frappe.throw("FinTS-URL muss mit https:// beginnen.")
 	if not doc.fints_login:
 		frappe.throw("Kein FinTS-Loginname konfiguriert.")
 
-	pin = frappe.utils.password.get_decrypted_password("Bankkonto", name, "fints_pin")
-	if not pin:
+	# Verify PIN exists before enqueuing (don't pass it to the queue)
+	pin_check = frappe.utils.password.get_decrypted_password("Bankkonto", name, "fints_pin")
+	if not pin_check:
 		frappe.throw("Kein FinTS-PIN hinterlegt.")
 
 	job_id = str(uuid.uuid4())
 
-	# Write initial state to cache
+	# Write initial state to cache; store owner for authorization checks
 	frappe.cache().set_value(
 		f"fints_job_{job_id}",
-		{"status": "pending", "name": name},
+		{"status": "pending", "name": name, "user": frappe.session.user},
 		expires_in_sec=600,
 	)
 
+	# PIN and login are intentionally NOT passed here – the background job
+	# retrieves them directly from Frappe's encrypted password store to avoid
+	# storing plaintext credentials in the Redis job queue.
 	frappe.enqueue(
 		"ktesis.api.fints._run_fints_sync",
 		queue="short",
@@ -117,11 +123,6 @@ def start_fints_sync(name):
 		job_id=job_id,        # sets the RQ job ID (not forwarded to function)
 		fints_job_id=job_id,  # passed explicitly to our function
 		bankkonto_name=name,
-		blz=doc.blz,
-		login=doc.fints_login,
-		pin=pin,
-		fints_url=doc.fints_url,
-		kontonummer=doc.kontonummer,
 	)
 
 	return {"job_id": job_id}
@@ -133,6 +134,8 @@ def get_fints_sync_status(job_id):
 	state = frappe.cache().get_value(f"fints_job_{job_id}")
 	if not state:
 		return {"status": "expired"}
+	if state.get("user") != frappe.session.user:
+		frappe.throw("Keine Berechtigung.", frappe.PermissionError)
 	return state
 
 
@@ -143,6 +146,8 @@ def submit_tan(job_id, tan):
 	state = frappe.cache().get_value(key)
 	if not state:
 		frappe.throw("Sitzung abgelaufen. Bitte neu starten.")
+	if state.get("user") != frappe.session.user:
+		frappe.throw("Keine Berechtigung.", frappe.PermissionError)
 	if state.get("status") != "tan_required":
 		frappe.throw("Keine TAN-Anforderung aktiv.")
 
@@ -152,16 +157,29 @@ def submit_tan(job_id, tan):
 	return {"status": "tan_submitted"}
 
 
-def _run_fints_sync(fints_job_id, bankkonto_name, blz, login, pin, fints_url, kontonummer):
+def _run_fints_sync(fints_job_id, bankkonto_name):
 	"""Background job: full FinTS sync including optional TAN interaction."""
 	job_id = fints_job_id
 	cache_key = f"fints_job_{job_id}"
 
 	def set_state(state):
-		frappe.cache().set_value(cache_key, state, expires_in_sec=600)
+		# Preserve the owner field so authorization checks keep working
+		existing = frappe.cache().get_value(cache_key) or {}
+		frappe.cache().set_value(cache_key, {**state, "user": existing.get("user")}, expires_in_sec=600)
 
 	try:
 		from fints.client import FinTS3PinTanClient, NeedTANResponse
+
+		# Load credentials inside the job so they never travel through the queue
+		doc = frappe.get_doc("Bankkonto", bankkonto_name)
+		blz = doc.blz
+		login = doc.fints_login
+		fints_url = doc.fints_url
+		kontonummer = doc.kontonummer
+		pin = frappe.utils.password.get_decrypted_password("Bankkonto", bankkonto_name, "fints_pin")
+		if not pin:
+			set_state({"status": "error", "message": "Kein FinTS-PIN hinterlegt.", "name": bankkonto_name})
+			return
 
 		set_state({"status": "connecting", "name": bankkonto_name})
 
@@ -251,7 +269,9 @@ def _find_account(accounts, kontonummer):
 	"""Find the matching SEPA account, fall back to first."""
 	if kontonummer:
 		for acc in accounts:
-			if acc.accountnumber == kontonummer or (acc.iban and kontonummer in acc.iban):
+			if acc.accountnumber == kontonummer:
+				return acc
+			if acc.iban and kontonummer in acc.iban:
 				return acc
 	return accounts[0]
 

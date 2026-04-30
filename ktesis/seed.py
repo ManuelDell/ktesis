@@ -6,7 +6,7 @@ def run():
 
     # Bankkonten
     konten = [
-        {'bezeichnung': 'Sparkonto ING', 'bank': 'ING', 'iban': 'DE75512108001245126199', 'kontotyp': 'Sparbuch', 'kontostand_manuell': 12500.00, 'waehrung': 'EUR', 'aktiv': 1},
+        {'bezeichnung': 'Sparkonto ING', 'bank': 'ING', 'iban': 'DE02300606010002474689', 'kontotyp': 'Sparbuch', 'kontostand_manuell': 12500.00, 'waehrung': 'EUR', 'aktiv': 1},
         {'bezeichnung': 'Kreditkarte Visa', 'bank': 'Commerzbank', 'kontotyp': 'Kreditkarte', 'kontostand_manuell': -450.20, 'waehrung': 'EUR', 'aktiv': 1},
     ]
     for k in konten:
