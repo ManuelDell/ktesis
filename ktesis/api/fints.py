@@ -204,6 +204,7 @@ def _run_fints_sync(fints_job_id, bankkonto_name):
 
 			# Match by IBAN or Kontonummer if possible
 			account = _find_account(accounts, kontonummer)
+			_sync_iban(bankkonto_name, account)
 
 			# --- Balance ---
 			balance_result = client.get_balance(account)
@@ -289,6 +290,17 @@ def _wait_for_tan(job_id, timeout=270):
 	return None
 
 
+def _sync_iban(bankkonto_name, account):
+	"""Write the IBAN reported by the bank back to the Bankkonto if not already set."""
+	if not account.iban:
+		return
+	doc = frappe.get_doc("Bankkonto", bankkonto_name)
+	if not doc.iban:
+		doc.iban = account.iban
+		doc.save(ignore_permissions=True)
+		frappe.db.commit()
+
+
 def _save_balance(bankkonto_name, balance):
 	"""Persist live balance and timestamp on the Bankkonto doc."""
 	doc = frappe.get_doc("Bankkonto", bankkonto_name)
@@ -312,11 +324,15 @@ def _save_transactions(bankkonto_name, account, transactions):
 		betrag = float(tx.data.get("amount", {}).amount if hasattr(tx.data.get("amount", 0), "amount") else 0)
 		kategorie = "Eingang" if betrag >= 0 else "Ausgang"
 
-		# Duplicate check: same konto + date + betrag + first 50 chars of text
+		# Duplicate check: konto + datum + betrag + richtung + buchungstext.
+		# kategorie ist nötig damit gleich hohe Ein- und Ausgänge am selben Tag
+		# nicht fälschlicherweise als Duplikat erkannt werden.
 		exists = frappe.db.exists("Bankbuchung", {
 			"bankkonto": bankkonto_name,
 			"datum": datum,
 			"betrag": abs(betrag),
+			"kategorie": kategorie,
+			"buchungstext": buchungstext[:140],
 		})
 		if exists:
 			continue
