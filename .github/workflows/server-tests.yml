@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main, develop]
 
-# Cancel in-progress only for PRs; pushes to main always complete.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -47,12 +46,37 @@ jobs:
       - name: frappe-bench installieren
         run: pip install frappe-bench
 
-      - name: Bench aufsetzen und App installieren
-        run: bash .github/scripts/install.sh
-        env:
-          FRAPPE_BRANCH: version-15
+      - name: bench init
+        run: |
+          bench init \
+            --frappe-branch version-15 \
+            --skip-assets \
+            ~/frappe-bench
+
+      - name: MariaDB Benutzer anlegen
+        run: |
+          mysql -h 127.0.0.1 -u root <<'SQL'
+          CREATE USER IF NOT EXISTS 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';
+          GRANT ALL PRIVILEGES ON *.* TO 'test_frappe'@'localhost' WITH GRANT OPTION;
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: bench new-site
+        run: |
+          cd ~/frappe-bench
+          bench new-site test_site \
+            --db-root-username root \
+            --db-root-password "" \
+            --admin-password admin \
+            --no-mariadb-socket
+
+      - name: ktesis installieren
+        run: |
+          cd ~/frappe-bench
+          bench get-app ktesis $GITHUB_WORKSPACE
+          bench --site test_site install-app ktesis
 
       - name: Tests ausführen
         run: |
-          cd $HOME/frappe-bench
+          cd ~/frappe-bench
           bench --site test_site run-tests --app ktesis --verbose
