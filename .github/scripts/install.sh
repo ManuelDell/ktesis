@@ -22,8 +22,19 @@ cd ~/frappe-bench || exit
 echo "Installing app..."
 bench get-app ktesis "${GITHUB_WORKSPACE}"
 
+echo "Setting up MySQL credentials..."
+cat > ~/.my.cnf <<EOF
+[client]
+user=root
+password=root
+host=127.0.0.1
+port=3306
+EOF
+
+chmod 600 ~/.my.cnf
+
 echo "Creating site..."
-printf 'root\n' | bench new-site test_site \
+bench new-site test_site \
     --db-type mariadb \
     --db-root-password root \
     --admin-password admin
