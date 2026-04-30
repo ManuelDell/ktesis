@@ -23,7 +23,7 @@ echo "Installing app..."
 bench get-app ktesis "${GITHUB_WORKSPACE}"
 
 echo "Creating site..."
-bench new-site test_site \
+printf 'root\n' | bench new-site test_site \
     --db-type mariadb \
     --db-root-password root \
     --admin-password admin
