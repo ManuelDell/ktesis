@@ -4,7 +4,7 @@ authors = [
     { name = "Dells Dienste", email = "manuel@diedells.de"}
 ]
 description = "Eine Haus und Vermögensverwaltungsapp. Mit übersicht für Dokumente, Bankanbindung zum read und co."
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
@@ -22,7 +22,7 @@ build-backend = "flit_core.buildapi"
 
 [tool.ruff]
 line-length = 110
-target-version = "py314"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
