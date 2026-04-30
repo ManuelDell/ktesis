@@ -13,7 +13,8 @@ bench init \
 cd "$BENCH_PATH"
 
 echo "=== MariaDB-Benutzer anlegen ==="
-mariadb -h 127.0.0.1 -u root -proot << 'SQL'
+# Root hat kein Passwort (MYSQL_ALLOW_EMPTY_PASSWORD)
+mysql -h 127.0.0.1 -u root << 'SQL'
 CREATE USER IF NOT EXISTS 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';
 GRANT ALL PRIVILEGES ON *.* TO 'test_frappe'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
@@ -22,7 +23,7 @@ SQL
 echo "=== Site anlegen ==="
 bench new-site test_site \
   --db-root-username root \
-  --db-root-password root \
+  --db-root-password "" \
   --admin-password admin \
   --no-mariadb-socket
 
