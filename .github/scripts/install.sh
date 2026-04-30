@@ -12,9 +12,6 @@ bench init \
 
 cd "$BENCH_PATH"
 
-echo "=== fints von GitHub installieren ==="
-env/bin/pip install git+https://github.com/raphaelm/python-fints.git
-
 echo "=== MariaDB-Benutzer anlegen ==="
 mysql -h 127.0.0.1 -u root << 'SQL'
 CREATE USER IF NOT EXISTS 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';
