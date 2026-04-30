@@ -24,6 +24,9 @@ redis-server config/redis_cache.conf --daemonize yes
 redis-server config/redis_queue.conf --daemonize yes
 sleep 2
 
+echo "Pre-installing python-fints via pip (uv resolver kann es nicht finden)..."
+~/frappe-bench/env/bin/pip install "python-fints>=3.1"
+
 echo "Installing app..."
 bench get-app ktesis "${GITHUB_WORKSPACE}"
 
