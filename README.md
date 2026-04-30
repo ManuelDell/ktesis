@@ -59,18 +59,12 @@
 ```bash
 bench get-app https://github.com/ManuelDell/ktesis.git
 bench --site <deine-site> install-app ktesis
-bench --site <deine-site> migrate
 ```
 
-### 2. Frontend bauen
+Der `install-app`-Befehl baut das Frontend automatisch (`npm install && npm run build`).
+Voraussetzung: Node.js und npm sind auf dem System installiert.
 
-```bash
-cd apps/ktesis/frontend
-npm install
-npm run build
-```
-
-### 3. Frappe neu starten
+### 2. Frappe neu starten
 
 ```bash
 bench restart
