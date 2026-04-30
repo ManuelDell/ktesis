@@ -20,11 +20,11 @@ FLUSH PRIVILEGES;
 SQL
 
 echo "=== Site anlegen ==="
+bench set-config -g db_host 127.0.0.1
 bench new-site test_site \
   --db-root-username root \
   --db-root-password "" \
-  --admin-password admin \
-  --db-host 127.0.0.1
+  --admin-password admin
 
 echo "=== ktesis aus lokalem Checkout installieren ==="
 bench get-app ktesis "$GITHUB_WORKSPACE"

@@ -64,11 +64,11 @@ jobs:
       - name: bench new-site
         run: |
           cd ~/frappe-bench
+          bench set-config -g db_host 127.0.0.1
           bench new-site test_site \
             --db-root-username root \
             --db-root-password "" \
-            --admin-password admin \
-            --db-host 127.0.0.1
+            --admin-password admin
 
       - name: ktesis installieren
         run: |
