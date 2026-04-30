@@ -6,8 +6,13 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: develop-ktesis-${{ github.event.number }}
+  cancel-in-progress: true
+
 jobs:
   tests:
+    name: Python Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -15,39 +20,55 @@ jobs:
       mysql:
         image: mariadb:10.6
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MARIADB_ROOT_PASSWORD: 'root'
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mariadb-admin ping"
           --health-interval=5s
           --health-timeout=2s
           --health-retries=3
 
     steps:
-      - name: Checkout
+      - name: Clone
         uses: actions/checkout@v4
 
-      - name: Python 3.11
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: pip
+          python-version: '3.12'
 
-      - name: System-Abhängigkeiten
+      - name: Check for valid Python & Merge Conflicts
+        if: github.event.pull_request.base.ref == 'develop'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y redis-server libmariadb-dev libcups2-dev mariadb-client
+          python -m compileall -f "${GITHUB_WORKSPACE}"
+          if grep -lr --exclude-dir=node_modules "^<<<<<<< " "${GITHUB_WORKSPACE}"
+            then echo "Found merge conflicts"
+            exit 1
+          fi
 
-      - name: frappe-bench installieren
-        run: pip install frappe-bench
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
 
-      - name: Bench aufsetzen und App installieren
-        run: bash .github/scripts/install.sh
+      - name: Add to Hosts
+        run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
+      - name: Install
+        run: bash ${GITHUB_WORKSPACE}/.github/scripts/install.sh
         env:
           FRAPPE_BRANCH: version-15
 
-      - name: Tests ausführen
-        run: |
-          cd $HOME/frappe-bench
-          bench --site test_site run-tests --app ktesis --verbose
+      - name: Run Tests
+        run: 'cd ~/frappe-bench/ && bench --site test_site run-tests --app ktesis --verbose'

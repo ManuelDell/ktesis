@@ -1,34 +1,34 @@
 #!/bin/bash
+
 set -e
 
-FRAPPE_BRANCH=${FRAPPE_BRANCH:-version-15}
-BENCH_PATH=$HOME/frappe-bench
+cd ~ || exit
 
-echo "=== Bench initialisieren (frappe $FRAPPE_BRANCH) ==="
-bench init \
-  --frappe-branch "$FRAPPE_BRANCH" \
-  --skip-assets \
-  "$BENCH_PATH"
+sudo apt-get update
+sudo apt-get install -y redis-server libmariadb-dev libffi-dev python3-dev libcups2-dev
 
-cd "$BENCH_PATH"
+echo "Starting Redis..."
+sudo redis-server /etc/redis/redis.conf &
 
-echo "=== MariaDB-Benutzer anlegen ==="
-# Root hat kein Passwort (MYSQL_ALLOW_EMPTY_PASSWORD)
-mysql -h 127.0.0.1 -u root << 'SQL'
-CREATE USER IF NOT EXISTS 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';
-GRANT ALL PRIVILEGES ON *.* TO 'test_frappe'@'localhost' WITH GRANT OPTION;
-FLUSH PRIVILEGES;
-SQL
+echo "Installing frappe-bench..."
+pip install --upgrade pip
+pip install frappe-bench
 
-echo "=== Site anlegen ==="
+echo "Initializing bench..."
+bench init frappe-bench --frappe-branch "${FRAPPE_BRANCH:-version-15}" --python "$(which python)"
+
+cd ~/frappe-bench || exit
+
+echo "Installing app..."
+bench get-app ktesis "${GITHUB_WORKSPACE}"
+
+echo "Creating site..."
 bench new-site test_site \
-  --db-root-username root \
-  --db-root-password "" \
-  --admin-password admin \
-  --no-mariadb-socket
+    --db-type mariadb \
+    --db-root-password root \
+    --admin-password admin
 
-echo "=== ktesis aus lokalem Checkout installieren ==="
-bench get-app ktesis "$GITHUB_WORKSPACE"
+echo "Installing app to site..."
 bench --site test_site install-app ktesis
 
-echo "=== Setup abgeschlossen ==="
+echo "Setup complete!"
