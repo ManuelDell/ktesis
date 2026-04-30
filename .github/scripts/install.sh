@@ -5,7 +5,7 @@ set -e
 cd ~ || exit
 
 sudo apt-get update
-sudo apt-get install -y libmariadb-dev libffi-dev python3-dev libcups2-dev
+sudo apt-get install -y redis-server libmariadb-dev libffi-dev python3-dev libcups2-dev
 
 echo "Installing frappe-bench..."
 pip install --upgrade pip
