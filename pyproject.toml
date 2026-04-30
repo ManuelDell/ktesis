@@ -9,7 +9,7 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
-    "python-fints @ git+https://github.com/raphaelm/python-fints.git",
+    "fints @ git+https://github.com/raphaelm/python-fints.git",
 ]
 
 [build-system]

@@ -24,7 +24,7 @@ redis-server config/redis_cache.conf --daemonize yes
 redis-server config/redis_queue.conf --daemonize yes
 sleep 2
 
-echo "Pre-installing python-fints von GitHub..."
+echo "Pre-installing fints von GitHub..."
 ~/frappe-bench/env/bin/pip install git+https://github.com/raphaelm/python-fints.git
 
 echo "Installing app..."
