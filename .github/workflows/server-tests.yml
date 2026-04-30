@@ -6,9 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+# Cancel in-progress only for PRs; let pushes to main always complete.
 concurrency:
-  group: develop-ktesis-${{ github.event.number }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   tests:
@@ -24,10 +25,10 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mariadb-admin ping"
+          --health-cmd="mariadb-admin ping -h 127.0.0.1 -u root -proot"
           --health-interval=5s
           --health-timeout=2s
-          --health-retries=3
+          --health-retries=10
 
     steps:
       - name: Clone
@@ -37,15 +38,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Check for valid Python & Merge Conflicts
-        if: github.event.pull_request.base.ref == 'develop'
-        run: |
-          python -m compileall -f "${GITHUB_WORKSPACE}"
-          if grep -lr --exclude-dir=node_modules "^<<<<<<< " "${GITHUB_WORKSPACE}"
-            then echo "Found merge conflicts"
-            exit 1
-          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4

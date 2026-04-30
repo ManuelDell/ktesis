@@ -5,39 +5,36 @@ set -e
 cd ~ || exit
 
 sudo apt-get update
-sudo apt-get install -y redis-server libmariadb-dev libffi-dev python3-dev libcups2-dev
-
-echo "Starting Redis..."
-sudo redis-server /etc/redis/redis.conf &
+sudo apt-get install -y libmariadb-dev libffi-dev python3-dev libcups2-dev
 
 echo "Installing frappe-bench..."
 pip install --upgrade pip
 pip install frappe-bench
 
-echo "Initializing bench..."
-bench init frappe-bench --frappe-branch "${FRAPPE_BRANCH:-version-15}" --python "$(which python)"
+echo "Initializing bench (skip assets — backend-only CI)..."
+bench init frappe-bench \
+  --frappe-branch "${FRAPPE_BRANCH:-version-15}" \
+  --python "$(which python)" \
+  --skip-assets
 
 cd ~/frappe-bench || exit
+
+echo "Starting Redis on bench-configured ports..."
+redis-server config/redis_cache.conf --daemonize yes
+redis-server config/redis_queue.conf --daemonize yes
+sleep 2
 
 echo "Installing app..."
 bench get-app ktesis "${GITHUB_WORKSPACE}"
 
-echo "Setting up MySQL credentials..."
-cat > ~/.my.cnf <<EOF
-[client]
-user=root
-password=root
-host=127.0.0.1
-port=3306
-EOF
-
-chmod 600 ~/.my.cnf
-
 echo "Creating site..."
 bench new-site test_site \
     --db-type mariadb \
+    --db-host 127.0.0.1 \
+    --db-root-username root \
     --db-root-password root \
-    --admin-password admin
+    --admin-password admin \
+    --no-mariadb-socket
 
 echo "Installing app to site..."
 bench --site test_site install-app ktesis
