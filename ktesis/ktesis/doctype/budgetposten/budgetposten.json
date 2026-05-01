@@ -1,0 +1,41 @@
+{
+ "actions": [],
+ "autoname": "format:BUD-{####}",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["kategorie", "betrag_monatlich", "notiz"],
+ "fields": [
+  {
+   "fieldname": "kategorie",
+   "fieldtype": "Select",
+   "label": "Kategorie",
+   "options": "Wohnen\nMobilitaet\nVersicherung\nLebensmittel\nFreizeit\nEinkommen\nSonstiges",
+   "reqd": 1
+  },
+  {
+   "fieldname": "betrag_monatlich",
+   "fieldtype": "Currency",
+   "label": "Budget monatlich",
+   "reqd": 1
+  },
+  {
+   "fieldname": "notiz",
+   "fieldtype": "Text",
+   "label": "Notiz"
+  }
+ ],
+ "links": [],
+ "module": "Ktesis",
+ "name": "Budgetposten",
+ "naming_rule": "Expression",
+ "permissions": [
+  {
+   "create": 1, "delete": 1, "email": 1, "export": 1,
+   "print": 1, "read": 1, "report": 1,
+   "role": "System Manager", "share": 1, "write": 1
+  }
+ ],
+ "sort_field": "kategorie",
+ "sort_order": "ASC",
+ "track_changes": 0
+}

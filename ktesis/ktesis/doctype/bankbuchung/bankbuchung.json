@@ -11,6 +11,7 @@
   "buchungstext",
   "betrag",
   "kategorie",
+  "buchungskategorie",
   "notizen"
  ],
  "fields": [
@@ -54,6 +55,12 @@
    "label": "Kategorie",
    "options": "Eingang\nAusgang",
    "reqd": 1
+  },
+  {
+   "fieldname": "buchungskategorie",
+   "fieldtype": "Select",
+   "label": "Buchungskategorie",
+   "options": "Wohnen\nMobilitaet\nVersicherung\nLebensmittel\nFreizeit\nEinkommen\nSonstiges"
   },
   {
    "fieldname": "notizen",

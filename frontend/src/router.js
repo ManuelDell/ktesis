@@ -19,6 +19,7 @@ const pages = {
     Vertraege:     safeImport(() => import('./views/Vertraege.vue')),
     Darlehen:      safeImport(() => import('./views/Darlehen.vue')),
     Bankkonten:    safeImport(() => import('./views/Bankkonten.vue')),
+  Budget: safeImport(() => import('./views/Budget.vue')),
 }
 
 // Exact routes
@@ -29,6 +30,7 @@ const routeMap = {
     '#/vertraege':     'Vertraege',
     '#/darlehen':      'Darlehen',
     '#/bankkonten':    'Bankkonten',
+  '#/budget': 'Budget',
 }
 
 // Dynamic routes: pattern regex → page name

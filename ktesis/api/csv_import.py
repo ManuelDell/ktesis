@@ -125,6 +125,23 @@ def preview_csv(bankkonto, csv_content):
 
 
 @frappe.whitelist()
+KATEGORIE_KEYWORDS = {
+    "Wohnen": ["miete", "nebenkosten", "strom", "gas", "wasser", "heizung", "haus", "wohnung", "grundsteuer"],
+    "Mobilitaet": ["tankstelle", "benzin", "diesel", "öl", "rewe", "edeka", "supermarkt", "kfz", "tüv", "fahrzeug", "auto", "bahn", "bvg", "mvv", "db ", "parken"],
+    "Versicherung": ["versicherung", "allianz", "huk", "axa", "debeka", "signal", "beitrag"],
+    "Lebensmittel": ["rewe", "edeka", "aldi", "lidl", "kaufland", "netto", "penny", "bäckerei", "metzgerei", "bio"],
+    "Freizeit": ["netflix", "spotify", "amazon prime", "kino", "theater", "restaurant", "cafe", "hotel", "urlaub"],
+    "Einkommen": ["gehalt", "lohn", "rente", "erstattung", "rueckzahlung", "steuererstattung"],
+}
+
+def _auto_kategorisieren(buchungstext):
+    text = buchungstext.lower()
+    for kat, keywords in KATEGORIE_KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            return kat
+    return "Sonstiges"
+
+
 def import_bankbuchungen(bankkonto, csv_content):
     if isinstance(csv_content, str):
         raw = csv_content.encode("utf-8")

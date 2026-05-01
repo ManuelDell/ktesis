@@ -21,6 +21,7 @@
 > Nicht für Produktionsumgebungen mit sensiblen Fremddaten geeignet.
 
 ## Stand der Entwicklung
+- Sprint 4 abgeschlossen — Budget-Planung, Soll-Ist-Vergleich, Buchungskategorien
 
 - **Sprint 1 abgeschlossen** — DocType-Validierungen, Permissions, DB-Index, Router-Fehlerbehandlung, Legacy-SPA entfernt
 - **Frontend:** Vue 3 SPA mit Vite
@@ -28,7 +29,7 @@
 - **FinTS:** pausiert bis `product_id` geklärt
 - **Sprint 2 abgeschlossen** — CSV-Import (DKB, Sparkasse, ING), Duplikat-Erkennung, Import-Dialog
 - **Sprint 3 abgeschlossen** — HTTPS läuft (self-signed, Port 443)
-- **Nächstes:** Sprint 4 — Budget-Planung
+- **Nächstes: Sprint 5 — Dashboard-Upgrade (Vermögensentwicklung Chart)
 
 ---
 

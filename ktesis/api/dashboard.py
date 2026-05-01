@@ -110,3 +110,87 @@ def get_vermoegensentwicklung():
 		"nettovermoegen": nettovermoegen,
 		"bruttovermoegen": immobilien_wert + fahrzeuge_wert + bank_saldo,
 	}
+
+
+@frappe.whitelist()
+def get_budget_vs_ist(monat=None, jahr=None):
+    """Return budget vs. actual spending per category for given month/year."""
+    from datetime import datetime
+    now = datetime.now()
+    monat = int(monat or now.month)
+    jahr = int(jahr or now.year)
+
+    datum_von = f"{jahr}-{monat:02d}-01"
+    if monat == 12:
+        datum_bis = f"{jahr+1}-01-01"
+    else:
+        datum_bis = f"{jahr}-{monat+1:02d}-01"
+
+    # Get budgets
+    budgets = frappe.get_all("Budgetposten", fields=["kategorie", "betrag_monatlich"])
+    budget_map = {b.kategorie: float(b.betrag_monatlich or 0) for b in budgets}
+
+    # Get actual spending per buchungskategorie
+    ist_rows = frappe.db.sql("""
+        SELECT buchungskategorie, SUM(ABS(betrag)) as gesamt
+        FROM `tabBankbuchung`
+        WHERE datum >= %s AND datum < %s
+          AND kategorie = 'Ausgang'
+          AND buchungskategorie IS NOT NULL AND buchungskategorie != ''
+        GROUP BY buchungskategorie
+    """, (datum_von, datum_bis), as_dict=True)
+
+    ist_map = {r.buchungskategorie: float(r.gesamt or 0) for r in ist_rows}
+
+    kategorien = ["Wohnen", "Mobilitaet", "Versicherung", "Lebensmittel", "Freizeit", "Einkommen", "Sonstiges"]
+    result = []
+    for kat in kategorien:
+        budget = budget_map.get(kat, 0)
+        ist = ist_map.get(kat, 0)
+        result.append({
+            "kategorie": kat,
+            "budget": budget,
+            "ist": ist,
+            "differenz": budget - ist,
+            "ueberschritten": ist > budget and budget > 0,
+        })
+
+    return {"monat": monat, "jahr": jahr, "kategorien": result}
+
+
+@frappe.whitelist()
+def get_monatsuebersicht(monat=None, jahr=None):
+    """Return monthly income, expenses, balance."""
+    from datetime import datetime
+    now = datetime.now()
+    monat = int(monat or now.month)
+    jahr = int(jahr or now.year)
+
+    datum_von = f"{jahr}-{monat:02d}-01"
+    if monat == 12:
+        datum_bis = f"{jahr+1}-01-01"
+    else:
+        datum_bis = f"{jahr}-{monat+1:02d}-01"
+
+    rows = frappe.db.sql("""
+        SELECT kategorie, SUM(ABS(betrag)) as gesamt
+        FROM `tabBankbuchung`
+        WHERE datum >= %s AND datum < %s
+        GROUP BY kategorie
+    """, (datum_von, datum_bis), as_dict=True)
+
+    einnahmen = 0.0
+    ausgaben = 0.0
+    for r in rows:
+        if r.kategorie == "Eingang":
+            einnahmen = float(r.gesamt or 0)
+        elif r.kategorie == "Ausgang":
+            ausgaben = float(r.gesamt or 0)
+
+    return {
+        "monat": monat,
+        "jahr": jahr,
+        "einnahmen": einnahmen,
+        "ausgaben": ausgaben,
+        "saldo": einnahmen - ausgaben,
+    }
