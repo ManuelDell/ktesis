@@ -1,0 +1,2 @@
+import{m as o}from"./index-qwTqboxH.js";function u(){const a=o(!1),t=o(null);async function r(s,i={}){var n;a.value=!0,t.value=null;try{const e=await fetch("/api/method/"+s,{method:"POST",headers:{"Content-Type":"application/json","X-Frappe-CSRF-Token":((n=window.frappe)==null?void 0:n.csrf_token)||window.csrf_token||""},body:JSON.stringify(i)});if(!e.ok)throw new Error(`HTTP ${e.status}`);return(await e.json()).message}catch(e){throw t.value=e.message,e}finally{a.value=!1}}return{loading:a,error:t,call:r}}export{u};
+//# sourceMappingURL=useApi-BceDfmkV.js.map

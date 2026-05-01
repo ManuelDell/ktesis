@@ -89,6 +89,7 @@ def _get_col(row, candidates):
 
 @frappe.whitelist()
 def preview_csv(bankkonto, csv_content):
+    frappe.get_doc("Bankkonto", bankkonto)  # raises if not found or no permission
     if isinstance(csv_content, str):
         raw = csv_content.encode("utf-8")
     else:
@@ -125,7 +126,6 @@ def preview_csv(bankkonto, csv_content):
     return {"format": fmt_name, "rows": rows}
 
 
-@frappe.whitelist()
 KATEGORIE_KEYWORDS = {
     "Wohnen": ["miete", "nebenkosten", "strom", "gas", "wasser", "heizung", "haus", "wohnung", "grundsteuer"],
     "Mobilitaet": ["tankstelle", "benzin", "diesel", "öl", "rewe", "edeka", "supermarkt", "kfz", "tüv", "fahrzeug", "auto", "bahn", "bvg", "mvv", "db ", "parken"],
@@ -143,7 +143,10 @@ def _auto_kategorisieren(buchungstext):
     return "Sonstiges"
 
 
+
+@frappe.whitelist()
 def import_bankbuchungen(bankkonto, csv_content):
+    frappe.get_doc("Bankkonto", bankkonto)  # raises if not found or no permission
     if isinstance(csv_content, str):
         raw = csv_content.encode("utf-8")
     else:
@@ -197,8 +200,9 @@ def import_bankbuchungen(bankkonto, csv_content):
                 "buchungstext": buchungstext[:140],
                 "betrag": betrag,
                 "kategorie": "Eingang" if betrag > 0 else "Ausgang",
+                "buchungskategorie": _auto_kategorisieren(buchungstext),
             })
-            doc.insert(ignore_permissions=True)
+            doc.insert()
             imported += 1
         except Exception as e:
             errors.append(f"Zeile {i+2}: {str(e)[:100]}")

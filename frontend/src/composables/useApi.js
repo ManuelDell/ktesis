@@ -12,7 +12,7 @@ export function useApi() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Frappe-CSRF-Token': window.csrf_token || '',
+          'X-Frappe-CSRF-Token': window.frappe?.csrf_token || window.csrf_token || ''
         },
         body: JSON.stringify(params),
       })

@@ -4,7 +4,7 @@ const user = ref(null)
 const loading = ref(true)
 
 function getCsrf() {
-  return window.csrf_token || window['csrf_token'] || ''
+  return window.frappe?.csrf_token || window.csrf_token || window['csrf_token'] || '' 
 }
 
 /**

@@ -31,7 +31,7 @@ def create_bank_account():
 		"fints_url": data.get("fints_url"),
 		"fints_login": data.get("fints_login"),
 		"kontonummer": data.get("kontonummer"),
-		"kontostand_manuell": data.get("kontostand_manuell"),
+		"kontostand_manuell": float(data.get("kontostand_manuell") or 0),
 		"kontotyp": data.get("kontotyp"),
 		"waehrung": data.get("waehrung", "EUR"),
 		"fints_aktiv": data.get("fints_aktiv", 0),
@@ -53,7 +53,10 @@ def update_bank_account(name):
 	              "kontonummer", "kontostand_manuell", "kontotyp", "waehrung",
 	              "fints_aktiv", "aktiv"]:
 		if field in data:
-			doc.set(field, data.get(field))
+			if field == "kontostand_manuell":
+				doc.set(field, float(data.get(field) or 0))
+			else:
+				doc.set(field, data.get(field))
 
 	doc.save()
 	if data.get("fints_pin"):
