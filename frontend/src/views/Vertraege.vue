@@ -5,10 +5,10 @@
       <!-- Top-Bereich -->
       <div class="flex items-center justify-between gap-4 mb-6">
         <h2 class="text-3xl font-semibold text-ink-gray-9 truncate">Verträge</h2>
-        <Button @click="openCreateDialog"
+        <Button size="md" @click="openCreateDialog"
           variant="solid" theme="gray"
         >
-          <FeatherIcon name="plus" class="w-4 h-4 mr-2" />
+          <FeatherIcon name="plus" class="w-4 h-4" />
           Neu
         </Button>
       </div>

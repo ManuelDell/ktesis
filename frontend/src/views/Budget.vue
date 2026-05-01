@@ -32,8 +32,8 @@
     <div class="bg-white border border-outline-gray-2 rounded-lg overflow-hidden mb-8">
       <div class="px-4 py-3 border-b border-outline-gray-1 flex items-center justify-between">
         <h3 class="font-medium text-ink-gray-8">Soll-Ist-Vergleich</h3>
-        <Button variant="outline" theme="gray" size="sm" @click="showBudgetForm = !showBudgetForm">
-          <FeatherIcon name="settings" class="w-4 h-4 mr-1" />
+        <Button variant="outline" theme="gray" size="md" @click="showBudgetForm = !showBudgetForm">
+          <FeatherIcon name="settings" class="w-4 h-4" />
           Budget bearbeiten
         </Button>
       </div>
