@@ -1,13 +1,24 @@
 import { ref, computed, shallowRef } from 'vue'
 
+const ErrorView = {
+    template: '<div style="padding:2rem;color:#e53e3e;">' +
+        '<h3>Seite konnte nicht geladen werden</h3>' +
+        '<p>Bitte Seite neu laden oder Support kontaktieren.</p>' +
+    '</div>'
+}
+
+function safeImport(importFn) {
+    return () => importFn().catch(() => ({ default: ErrorView }))
+}
+
 // Lazy-loaded page components
 const pages = {
-    Dashboard:     () => import('./views/Dashboard.vue'),
-    Fahrzeuge:     () => import('./views/Fahrzeuge.vue'),
-    Wohnungen:     () => import('./views/Wohnungen.vue'),
-    Vertraege:     () => import('./views/Vertraege.vue'),
-    Darlehen:      () => import('./views/Darlehen.vue'),
-    Bankkonten:    () => import('./views/Bankkonten.vue'),
+    Dashboard:     safeImport(() => import('./views/Dashboard.vue')),
+    Fahrzeuge:     safeImport(() => import('./views/Fahrzeuge.vue')),
+    Wohnungen:     safeImport(() => import('./views/Wohnungen.vue')),
+    Vertraege:     safeImport(() => import('./views/Vertraege.vue')),
+    Darlehen:      safeImport(() => import('./views/Darlehen.vue')),
+    Bankkonten:    safeImport(() => import('./views/Bankkonten.vue')),
 }
 
 // Exact routes

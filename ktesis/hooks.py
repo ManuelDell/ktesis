@@ -91,6 +91,18 @@ after_install = "ktesis.install.after_install"
 # ------------------
 commands = ["ktesis.commands"]
 
+# Permissions
+has_permission = {
+    "Fahrzeug": "ktesis.permissions.has_ktesis_permission",
+    "Wohnung": "ktesis.permissions.has_ktesis_permission",
+    "Bankkonto": "ktesis.permissions.has_ktesis_permission",
+    "Bankbuchung": "ktesis.permissions.has_ktesis_permission",
+    "Darlehen": "ktesis.permissions.has_ktesis_permission",
+    "Vertrag": "ktesis.permissions.has_ktesis_permission",
+    "Abschreibung": "ktesis.permissions.has_ktesis_permission",
+}
+
+
 # Uninstallation
 # ------------
 

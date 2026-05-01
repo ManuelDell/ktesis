@@ -20,6 +20,16 @@
 > **Development Stage** — Ktesis ist eine persönliche Vermögensverwaltung in aktiver Entwicklung.
 > Nicht für Produktionsumgebungen mit sensiblen Fremddaten geeignet.
 
+## Stand der Entwicklung
+
+- **Sprint 1 abgeschlossen** — DocType-Validierungen, Permissions, DB-Index, Router-Fehlerbehandlung, Legacy-SPA entfernt
+- **Frontend:** Vue 3 SPA mit Vite
+- **Backend:** Frappe DocTypes mit Controller-Validierungen
+- **FinTS:** pausiert bis `product_id` geklärt
+- **Nächstes:** Sprint 2 — CSV-Import Bankbuchungen
+
+---
+
 ## Features
 
 - **Dashboard** — KPI-Karten: Nettovermögen, Bankkonten, Darlehensrestschuld, monatliche Kosten
