@@ -196,10 +196,13 @@ def get_monatsuebersicht(monat=None, jahr=None):
     }
 
 @frappe.whitelist()
+
+
+@frappe.whitelist()
 def get_buchungen_verlauf(monate=12):
-    \"\"\"Return monthly income/expense totals for the last N months.\"\"\"
+    """Return monthly income/expense totals for the last N months."""
     import calendar
-    from datetime import date
+    from datetime import date, datetime as dt
 
     monate = int(monate)
     today = date.today()
@@ -212,31 +215,30 @@ def get_buchungen_verlauf(monate=12):
             month += 12
             year -= 1
 
-        datum_von = f\"{year}-{month:02d}-01\"
+        datum_von = f"{year}-{month:02d}-01"
         last_day = calendar.monthrange(year, month)[1]
-        datum_bis = f\"{year}-{month:02d}-{last_day}\"
+        datum_bis = f"{year}-{month:02d}-{last_day}"
 
-        rows = frappe.db.sql(\"\"\"
+        rows = frappe.db.sql("""
             SELECT kategorie, COALESCE(SUM(ABS(betrag)), 0) as gesamt
-            FROM \`tabBankbuchung\`
+            FROM `tabBankbuchung`
             WHERE datum BETWEEN %s AND %s
             GROUP BY kategorie
-        \"\"\", (datum_von, datum_bis), as_dict=True)
+        """, (datum_von, datum_bis), as_dict=True)
 
         einnahmen = 0.0
         ausgaben = 0.0
         for r in rows:
-            if r.kategorie == \"Eingang\":
+            if r.kategorie == "Eingang":
                 einnahmen = float(r.gesamt)
-            elif r.kategorie == \"Ausgang\":
+            elif r.kategorie == "Ausgang":
                 ausgaben = float(r.gesamt)
 
-        from datetime import datetime
-        label = datetime(year, month, 1).strftime(\"%b %y\")
+        label = dt(year, month, 1).strftime("%b %y")
         result.append({
-            \"label\": label,
-            \"einnahmen\": einnahmen,
-            \"ausgaben\": ausgaben,
+            "label": label,
+            "einnahmen": einnahmen,
+            "ausgaben": ausgaben,
         })
 
     return result

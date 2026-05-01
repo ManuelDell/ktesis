@@ -174,10 +174,10 @@ server {{
 
     location / {{
         rewrite ^(.+)/$ $1 permanent;
-        rewrite ^(.+)/index\.html$ $1 permanent;
-        rewrite ^(.+)\.html$ $1 permanent;
+        rewrite ^(.+)/index\\.html$ $1 permanent;
+        rewrite ^(.+)\\.html$ $1 permanent;
 
-        location ~* ^/files/.*\.(htm|html|svg|xml) {{
+        location ~* ^/files/.*\\.(htm|html|svg|xml) {{
             add_header Content-Disposition "attachment";
             try_files /{site}/public/$uri @webserver;
         }}

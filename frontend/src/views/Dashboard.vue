@@ -159,11 +159,58 @@
         </div>
       </div>
     </div>
+    <!-- Einnahmen / Ausgaben Chart -->
+    <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5 mt-5">
+      <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
+        <FeatherIcon name="bar-chart-2" class="w-4 h-4 text-ink-gray-5" />
+        Einnahmen & Ausgaben (12 Monate)
+      </h3>
+      <canvas ref="chartCanvas" height="120"></canvas>
+    </div>
+
+    <!-- Was-wäre-wenn Tilgungsrechner -->
+    <div v-if="finance.darlehen && finance.darlehen.length" class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5 mt-5">
+      <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
+        <FeatherIcon name="sliders" class="w-4 h-4 text-ink-gray-5" />
+        Was wäre wenn? — Sondertilgung
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="text-sm text-ink-gray-6 mb-1 block">Darlehen auswählen</label>
+          <select v-model="tilgungDarlehenIdx" class="border border-outline-gray-3 rounded-md px-3 py-2 text-sm w-full bg-white">
+            <option v-for="(d, i) in finance.darlehen" :key="d.name" :value="i">{{ d.bezeichnung }}</option>
+          </select>
+          <label class="text-sm text-ink-gray-6 mt-4 mb-1 block">
+            Zusätzliche Tilgung: <strong>{{ extraTilgung }} €/Monat</strong>
+          </label>
+          <input type="range" v-model.number="extraTilgung" min="0" max="500" step="25" class="w-full" />
+          <div class="flex justify-between text-xs text-ink-gray-4 mt-1"><span>0 €</span><span>500 €</span></div>
+        </div>
+        <div v-if="tilgungErgebnis" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-surface-gray-1 rounded-lg p-3 text-center">
+              <div class="text-xs text-ink-gray-5 mb-1">Laufzeit heute</div>
+              <div class="font-semibold text-ink-gray-9">{{ tilgungErgebnis.monate_alt }} Mo.</div>
+            </div>
+            <div class="bg-surface-green-1 rounded-lg p-3 text-center border border-outline-green-2">
+              <div class="text-xs text-ink-gray-5 mb-1">Laufzeit neu</div>
+              <div class="font-semibold text-ink-green-3">{{ tilgungErgebnis.monate_neu }} Mo.</div>
+            </div>
+          </div>
+          <div class="bg-surface-green-1 border border-outline-green-2 rounded-lg p-3 text-center">
+            <div class="text-xs text-ink-gray-5 mb-1">Zinsersparnis</div>
+            <div class="text-lg font-bold text-ink-green-3">{{ fmtEuro(tilgungErgebnis.zinsersparnis) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
+import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } from 'chart.js'
+Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController)
 import { FeatherIcon, Badge } from 'frappe-ui'
 import KachelCard from '../components/KachelCard.vue'
 
@@ -180,6 +227,10 @@ const vermoegen = ref({
 })
 const ampel = ref([])
 const ampelLoading = ref(false)
+const chartCanvas = ref(null)
+let chartInstance = null
+const tilgungDarlehenIdx = ref(0)
+const extraTilgung = ref(100)
 
 function fmtEuro(n) {
   if (n == null) return '-'
@@ -196,6 +247,40 @@ function ampelCardClass(ampel) {
       return 'bg-surface-gray-1 border-outline-gray-1'
   }
 }
+
+function berechneTilgung(restschuld, zinssatz, monatsrate, extraMonatlich) {
+  if (!restschuld || !monatsrate || monatsrate <= 0) return null
+  const monatszins = (zinssatz || 0) / 100 / 12
+
+  function monateAbzahlen(rate) {
+    if (rate <= 0) return { monate: 9999, zinsen: 0 }
+    let schuld = restschuld
+    let zinsen = 0
+    let monate = 0
+    while (schuld > 0.01 && monate < 600) {
+      const z = schuld * monatszins
+      zinsen += z
+      schuld = schuld + z - rate
+      if (schuld < 0) schuld = 0
+      monate++
+    }
+    return { monate, zinsen }
+  }
+
+  const alt = monateAbzahlen(monatsrate)
+  const neu = monateAbzahlen(monatsrate + extraMonatlich)
+  return {
+    monate_alt: alt.monate,
+    monate_neu: neu.monate,
+    zinsersparnis: Math.max(0, alt.zinsen - neu.zinsen),
+  }
+}
+
+const tilgungErgebnis = computed(() => {
+  const d = finance.value.darlehen?.[tilgungDarlehenIdx.value]
+  if (!d) return null
+  return berechneTilgung(d.restschuld, d.zinssatz, d.monatliche_rate, extraTilgung.value)
+})
 
 onMounted(async () => {
   try {
@@ -220,5 +305,29 @@ onMounted(async () => {
   } finally {
     ampelLoading.value = false
   }
+
+  // Chart: Einnahmen/Ausgaben letzte 12 Monate
+  try {
+    const verlaufData = await fetch('/api/method/ktesis.api.dashboard.get_buchungen_verlauf?monate=12')
+      .then(r => r.json()).then(d => d.message || [])
+    await nextTick()
+    if (chartCanvas.value) {
+      chartInstance = new Chart(chartCanvas.value, {
+        type: 'bar',
+        data: {
+          labels: verlaufData.map(r => r.label),
+          datasets: [
+            { label: 'Einnahmen', data: verlaufData.map(r => r.einnahmen), backgroundColor: 'rgba(34,197,94,0.6)', borderRadius: 4 },
+            { label: 'Ausgaben', data: verlaufData.map(r => r.ausgaben), backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4 },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'top' } },
+          scales: { y: { beginAtZero: true } },
+        },
+      })
+    }
+  } catch (e) { console.error('Chart error:', e) }
 })
 </script>
