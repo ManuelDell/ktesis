@@ -28,7 +28,7 @@
 - **Backend:** Frappe DocTypes mit Controller-Validierungen
 - **FinTS:** pausiert bis `product_id` geklärt
 - **Sprint 2 abgeschlossen** — CSV-Import (DKB, Sparkasse, ING), Duplikat-Erkennung, Import-Dialog
-- **Sprint 3 abgeschlossen** — HTTPS läuft (self-signed, Port 443)
+- **Sprint 3 abgeschlossen** — HTTPS läuft (self-signed, Port 443), Port 80+2024 → HTTPS-Redirect, vollständige Frappe-nginx-Konfiguration
 - **Nächstes: Sprint 5 — Dashboard-Upgrade (Vermögensentwicklung Chart)
 
 ---

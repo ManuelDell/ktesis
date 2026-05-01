@@ -97,16 +97,26 @@ def _write_site_config(bench_path, site, key, value):
 
 
 def _build_nginx_config(ip, site, gunicorn_port, socketio_port, cert_path, key_path):
-    return f"""# Ktesis HTTPS – generiert von bench setup-ktesis-https
+    bench_root = os.path.abspath(".")
+    sites_path = os.path.join(bench_root, "sites")
+    return f"""# Ktesis HTTPS — generiert von bench setup-ktesis-https
 # Generiert: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 
 # HTTP -> HTTPS redirect
 server {{
     listen 80;
     server_name {ip};
-    return 301 https://$host$request_uri;
+    return 301 https://{ip}$request_uri;
 }}
 
+# Port 2024 (Frappe-Dev-Port) -> HTTPS redirect
+server {{
+    listen 2024;
+    server_name {ip};
+    return 301 https://{ip}$request_uri;
+}}
+
+# HTTPS server — vollstaendige Frappe-Konfiguration
 server {{
     listen 443 ssl;
     server_name {ip};
@@ -118,34 +128,77 @@ server {{
     ssl_session_cache   shared:SSL:10m;
     ssl_session_timeout 10m;
 
-    add_header Strict-Transport-Security "max-age=31536000" always;
+    root {sites_path};
+
+    client_max_body_size 50m;
+    client_body_buffer_size 16K;
+    client_header_buffer_size 1k;
+
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
     add_header X-Content-Type-Options nosniff;
     add_header X-Frame-Options SAMEORIGIN;
 
-    location / {{
-        proxy_pass         http://127.0.0.1:{gunicorn_port};
-        proxy_http_version 1.1;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto https;
-        proxy_set_header   X-Frappe-Site-Name {site};
-        proxy_set_header   X-Use-X-Accel-Redirect True;
-        proxy_read_timeout 120;
-        proxy_connect_timeout 10;
-        proxy_redirect off;
+    gzip on;
+    gzip_http_version 1.1;
+    gzip_comp_level 5;
+    gzip_min_length 256;
+    gzip_proxied any;
+    gzip_vary on;
+    gzip_types application/atom+xml application/javascript application/json
+        application/rss+xml application/xhtml+xml application/xml
+        font/opentype image/svg+xml image/x-icon text/css text/plain;
+
+    location /assets {{
+        try_files $uri =404;
+        add_header Cache-Control "max-age=31536000";
+    }}
+
+    location ~ ^/protected/(.*) {{
+        internal;
+        try_files /{site}/$1 =404;
     }}
 
     location /socket.io {{
-        proxy_pass         http://127.0.0.1:{socketio_port};
         proxy_http_version 1.1;
-        proxy_set_header   Upgrade $http_upgrade;
-        proxy_set_header   Connection "upgrade";
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Forwarded-Proto https;
-        proxy_set_header   X-Frappe-Site-Name {site};
-        proxy_set_header   Origin $scheme://$http_host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header X-Frappe-Site-Name {site};
+        proxy_set_header Origin $scheme://$http_host;
+        proxy_set_header Host $host;
+        proxy_pass http://127.0.0.1:{socketio_port};
     }}
+
+    location / {{
+        rewrite ^(.+)/$ $1 permanent;
+        rewrite ^(.+)/index\.html$ $1 permanent;
+        rewrite ^(.+)\.html$ $1 permanent;
+
+        location ~* ^/files/.*\.(htm|html|svg|xml) {{
+            add_header Content-Disposition "attachment";
+            try_files /{site}/public/$uri @webserver;
+        }}
+
+        try_files /{site}/public/$uri @webserver;
+    }}
+
+    location @webserver {{
+        proxy_http_version 1.1;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Frappe-Site-Name {site};
+        proxy_set_header Host $host;
+        proxy_set_header X-Use-X-Accel-Redirect True;
+        proxy_read_timeout 120;
+        proxy_redirect off;
+        proxy_pass http://127.0.0.1:{gunicorn_port};
+    }}
+
+    access_log /var/log/nginx/ktesis-ssl-access.log;
+    error_log  /var/log/nginx/ktesis-ssl-error.log;
 }}
 """
 
