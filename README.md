@@ -269,6 +269,14 @@ echo "from ktesis.api import get_dashboard_stats; print(get_dashboard_stats())" 
 - Python Type Hints in api/csv_import.py und api/dashboard.py
 - Unit Tests: test_csv_import.py (8 Tests, alle grün)
 
+
+## Sprint 7 — Verträge 2.0 ✅
+- Kündigungsfristen-Kalkulator: automatische Berechnung nächster Deadline
+- Ampel-Anzeige (rot/gelb/grün) je nach Dringlichkeit
+- E-Mail-Reminder: wöchentlicher Scheduler für Verträge ≤ 60 Tage bis Kündigung
+- Dokument-Upload Feld in Vertrag DocType
+- Vertraege.vue mit Ampel-Karten und Frist-Anzeige
+
 ## Lizenz
 
 MIT — siehe [license.txt](./license.txt)
