@@ -272,7 +272,7 @@ onMounted(async () => {
   const { call } = useApi()
   try {
     const [statsData, financeData, vermoegenData] = await Promise.all([
-      call('ktesis.api.__init__.get_dashboard_stats'),
+      call('ktesis.api.get_dashboard_stats'),
       call('ktesis.api.dashboard.get_finance_summary'),
       call('ktesis.api.dashboard.get_vermoegensentwicklung'),
     ])

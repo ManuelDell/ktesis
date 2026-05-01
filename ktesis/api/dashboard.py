@@ -93,12 +93,12 @@ def get_vermoegensentwicklung() -> dict:
 	# Bankguthaben
 	bank_saldo = frappe.db.sql("""
 		SELECT COALESCE(SUM(kontostand_manuell), 0) FROM `tabBankkonto` WHERE aktiv = 1
-	"")[0][0] or 0
+	""")[0][0] or 0
 
 	# Darlehen (Restschuld als negatives Vermögen)
 	restschuld = frappe.db.sql("""
 		SELECT COALESCE(SUM(restschuld), 0) FROM `tabDarlehen` WHERE aktiv = 1
-	"")[0][0] or 0
+	""")[0][0] or 0
 
 	# Nettovermögen
 	nettovermoegen = immobilien_wert + fahrzeuge_wert + bank_saldo - restschuld
