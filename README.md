@@ -262,6 +262,13 @@ echo "from ktesis.api import get_dashboard_stats; print(get_dashboard_stats())" 
 
 ---
 
+
+## Sprint 6 — Code-Qualität ✅
+
+- `useApi` Composable: zentraler fetch-Wrapper mit loading/error state
+- Python Type Hints in api/csv_import.py und api/dashboard.py
+- Unit Tests: test_csv_import.py (8 Tests, alle grün)
+
 ## Lizenz
 
 MIT — siehe [license.txt](./license.txt)
