@@ -13,7 +13,7 @@
        </div>
        <div v-if="!collapsed" class="kt-sb-brand-text">
           <span class="kt-sb-brand-name">Ktesis</span>
-          <span class="kt-sb-brand-sub">Vermögensverwaltung</span>
+          
        </div>
      </a>
      <button

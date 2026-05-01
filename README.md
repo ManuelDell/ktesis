@@ -31,6 +31,29 @@ Frappe-App zur strukturierten Verwaltung von Finanzen, Vermoegenswerten und Vert
 - **Vermoegensuebersicht** — Kacheln mit Gesamtvermoegen, offene Darlehen, Monatssaldo
 - **Tilgungsrechner** — Was-waere-wenn Sondertilgung mit Schieberegler
 
+## Screenshots
+
+### Dashboard
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Fahrzeuge
+![Fahrzeuge](docs/screenshots/fahrzeuge.png)
+
+### Wohnungen
+![Wohnungen](docs/screenshots/wohnungen.png)
+
+### Vertraege
+![Vertraege](docs/screenshots/vertraege.png)
+
+### Darlehen
+![Darlehen](docs/screenshots/darlehen.png)
+
+### Darlehen — Tilgungsplan
+![Darlehen Tilgungsplan](docs/screenshots/darlehen_detail.png)
+
+### Bankkonten
+![Bankkonten](docs/screenshots/bankkonten.png)
+
 ## DocTypes
 
 | DocType | Beschreibung |
