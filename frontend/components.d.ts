@@ -12,6 +12,7 @@ declare module 'vue' {
     AppTopbar: typeof import('./src/components/AppTopbar.vue')['default']
     AttachmentList: typeof import('./src/components/AttachmentList.vue')['default']
     BankkontoDetail: typeof import('./src/components/BankkontoDetail.vue')['default']
+    CsvImportDialog: typeof import('./src/components/CsvImportDialog.vue')['default']
     DarlehenDetail: typeof import('./src/components/DarlehenDetail.vue')['default']
     DkModal: typeof import('./src/components/DkModal.vue')['default']
     FahrzeugDetail: typeof import('./src/components/FahrzeugDetail.vue')['default']

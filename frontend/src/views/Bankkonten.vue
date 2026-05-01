@@ -57,6 +57,13 @@
             </div>
             <div class="flex items-center gap-2">
               <button
+                @click.stop="openImport(item)"
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-blue-4 hover:bg-surface-blue-1 transition-all md:opacity-0 md:group-hover:opacity-100"
+                title="Kontoauszug importieren"
+              >
+                <FeatherIcon name="upload" class="w-4 h-4" />
+              </button>
+              <button
                 @click.stop="openDetail(item.name)"
                 class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all md:opacity-0 md:group-hover:opacity-100"
                 title="Bearbeiten"
@@ -158,6 +165,15 @@
         </p>
       </template>
     </Dialog>
+    <!-- CSV Import Dialog -->
+    <CsvImportDialog
+      v-if="showImportDialog"
+      v-model="showImportDialog"
+      :bankkonto="importBankkonto"
+      :bankkontoBezeichnung="importBankkontoBezeichnung"
+      @imported="onImported"
+    />
+
   </div>
 </template>
 
@@ -166,6 +182,7 @@ import { ref, computed, onMounted } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { useApi } from '../composables/useApi'
 import BankkontoDetail from '../components/BankkontoDetail.vue'
+import CsvImportDialog from '../components/CsvImportDialog.vue'
 
 const { list, delete_, call } = useApi()
 
@@ -177,6 +194,9 @@ const search = ref('')
 const showCreateDialog = ref(false)
 const showDeleteDialog = ref(false)
 const itemToDelete = ref(null)
+const showImportDialog = ref(false)
+const importBankkonto = ref('')
+const importBankkontoBezeichnung = ref('')
 const buchungen = ref([])
 const buchungenLoading = ref(false)
 
@@ -270,6 +290,17 @@ async function doDelete() {
   } catch (e) {
     alert('Fehler beim Löschen: ' + (e.message || 'Unbekannter Fehler'))
   }
+}
+
+function openImport(item) {
+  importBankkonto.value = item.name
+  importBankkontoBezeichnung.value = item.bezeichnung || item.name
+  showImportDialog.value = true
+}
+
+function onImported() {
+  loadBuchungen()
+  loadList()
 }
 
 onMounted(() => {

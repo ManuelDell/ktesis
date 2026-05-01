@@ -26,7 +26,8 @@
 - **Frontend:** Vue 3 SPA mit Vite
 - **Backend:** Frappe DocTypes mit Controller-Validierungen
 - **FinTS:** pausiert bis `product_id` geklärt
-- **Nächstes:** Sprint 2 — CSV-Import Bankbuchungen
+- **Sprint 2 abgeschlossen** — CSV-Import (DKB, Sparkasse, ING), Duplikat-Erkennung, Import-Dialog
+- **Nächstes:** Sprint 3 — HTTPS Setup
 
 ---
 
