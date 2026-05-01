@@ -22,6 +22,7 @@
 
 ## Stand der Entwicklung
 - Sprint 4 abgeschlossen — Budget-Planung, Soll-Ist-Vergleich, Buchungskategorien
+- **Sprint 5 abgeschlossen** — Dashboard-Upgrade: Chart.js Einnahmen/Ausgaben, Tilgungsrechner, neue APIs
 
 - **Sprint 1 abgeschlossen** — DocType-Validierungen, Permissions, DB-Index, Router-Fehlerbehandlung, Legacy-SPA entfernt
 - **Frontend:** Vue 3 SPA mit Vite
@@ -29,7 +30,14 @@
 - **FinTS:** pausiert bis `product_id` geklärt
 - **Sprint 2 abgeschlossen** — CSV-Import (DKB, Sparkasse, ING), Duplikat-Erkennung, Import-Dialog
 - **Sprint 3 abgeschlossen** — HTTPS läuft (self-signed, Port 443), Port 80+2024 → HTTPS-Redirect, vollständige Frappe-nginx-Konfiguration
-- **Nächstes: Sprint 5 — Dashboard-Upgrade (Vermögensentwicklung Chart)
+- **Nächstes: Sprint 6 — Verträge 2.0 / Kündigungsassistent
+
+---
+
+## Sprint 5 — Dashboard-Upgrade ✅
+- Chart.js Balkendiagramm: Einnahmen/Ausgaben der letzten 12 Monate
+- Was-wäre-wenn Tilgungsrechner: Schieberegler für Sondertilgung, Live-Berechnung der Restlaufzeit
+- API: get_buchungen_verlauf(), get_monatsuebersicht(), get_budget_vs_ist()
 
 ---
 
