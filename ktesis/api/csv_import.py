@@ -1,3 +1,4 @@
+from __future__ import annotations
 import csv
 import io
 import frappe
@@ -30,10 +31,10 @@ BANK_FORMATS = {
 }
 
 
-def _parse_german_amount(amount_str):
-    if not amount_str:
+def _parse_german_amount(s: str) -> float:
+    if not s:
         return None
-    cleaned = amount_str.strip().strip('"').replace("\xa0", "").replace(" ", "")
+    cleaned = s.strip().strip('"').replace("\xa0", "").replace(" ", "")
     cleaned = cleaned.replace(".", "").replace(",", ".")
     try:
         return float(cleaned)
@@ -41,28 +42,28 @@ def _parse_german_amount(amount_str):
         return None
 
 
-def _parse_date(date_str):
-    date_str = date_str.strip().strip('"')
+def _parse_date(s: str) -> str:
+    s = s.strip().strip('"')
     for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
         try:
             from datetime import datetime
-            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+            return datetime.strptime(s, fmt).strftime("%Y-%m-%d")
         except ValueError:
             continue
     return None
 
 
-def _decode_csv(raw_bytes):
+def _decode_csv(content: bytes) -> str:
     for enc in ["utf-8-sig", "utf-8", "iso-8859-1", "cp1252"]:
         try:
-            return raw_bytes.decode(enc)
+            return content.decode(enc)
         except (UnicodeDecodeError, AttributeError):
             continue
-    return raw_bytes.decode("iso-8859-1", errors="replace")
+    return content.decode("iso-8859-1", errors="replace")
 
 
-def _find_header_row(lines):
-    for i, line in enumerate(lines[:15]):
+def _find_header_row(rows: list) -> int:
+    for i, line in enumerate(rows[:15]):
         if any(k in line for k in ["Buchungstag", "Auftragskonto", "Buchung", "Datum"]):
             return i
     return 0

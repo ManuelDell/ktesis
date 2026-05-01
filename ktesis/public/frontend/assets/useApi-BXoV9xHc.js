@@ -1,0 +1,2 @@
+import{m as n}from"./index-pbCGV-AN.js";function u(){const a=n(!1),t=n(null);async function o(r,s={}){a.value=!0,t.value=null;try{const e=await fetch("/api/method/"+r,{method:"POST",headers:{"Content-Type":"application/json","X-Frappe-CSRF-Token":window.csrf_token||""},body:JSON.stringify(s)});if(!e.ok)throw new Error(`HTTP ${e.status}`);return(await e.json()).message}catch(e){throw t.value=e.message,e}finally{a.value=!1}}return{loading:a,error:t,call:o}}export{u};
+//# sourceMappingURL=useApi-BXoV9xHc.js.map

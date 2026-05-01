@@ -214,6 +214,7 @@ import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarCont
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController)
 import { FeatherIcon, Badge } from 'frappe-ui'
 import KachelCard from '../components/KachelCard.vue'
+import { useApi } from '../composables/useApi.js'
 
 const stats = ref({
   fahrzeuge: 0, wohnungen: 0, aktive_vertraege: 0,
@@ -268,11 +269,12 @@ const tilgungErgebnis = computed(() => {
 })
 
 onMounted(async () => {
+  const { call } = useApi()
   try {
     const [statsData, financeData, vermoegenData] = await Promise.all([
-      fetch('/api/method/ktesis.api.__init__.get_dashboard_stats').then(r => r.json()).then(d => d.message),
-      fetch('/api/method/ktesis.api.dashboard.get_finance_summary').then(r => r.json()).then(d => d.message),
-      fetch('/api/method/ktesis.api.dashboard.get_vermoegensentwicklung').then(r => r.json()).then(d => d.message),
+      call('ktesis.api.__init__.get_dashboard_stats'),
+      call('ktesis.api.dashboard.get_finance_summary'),
+      call('ktesis.api.dashboard.get_vermoegensentwicklung'),
     ])
     stats.value = statsData
     finance.value = financeData
@@ -281,8 +283,7 @@ onMounted(async () => {
 
   ampelLoading.value = true
   try {
-    const ampelData = await fetch('/api/method/ktesis.api.dashboard.get_vertrags_ampel')
-      .then(r => r.json()).then(d => d.message)
+    const ampelData = await call('ktesis.api.dashboard.get_vertrags_ampel')
     ampel.value = ampelData || []
     vertraege.value = ampelData || []
   } catch (e) {
@@ -292,8 +293,7 @@ onMounted(async () => {
   }
 
   try {
-    const verlaufData = await fetch('/api/method/ktesis.api.dashboard.get_buchungen_verlauf?monate=12')
-      .then(r => r.json()).then(d => d.message || [])
+    const verlaufData = await call('ktesis.api.dashboard.get_buchungen_verlauf', { monate: 12 })
     await nextTick()
     if (chartCanvas.value) {
       chartInstance = new Chart(chartCanvas.value, {

@@ -1,9 +1,10 @@
+from __future__ import annotations
 import frappe
 from datetime import datetime, timedelta
 
 
 @frappe.whitelist()
-def get_finance_summary():
+def get_finance_summary() -> dict:
 	"""Return finance overview: bank accounts, loans, contract costs."""
 	bankkonten = frappe.get_all(
 		"Bankkonto",
@@ -37,7 +38,7 @@ def get_finance_summary():
 
 
 @frappe.whitelist()
-def get_vertrags_ampel():
+def get_vertrags_ampel() -> list:
 	"""Return contracts with traffic-light status based on end date / notice period."""
 	vertraege = frappe.get_all(
 		"Vertrag",
@@ -72,7 +73,7 @@ def get_vertrags_ampel():
 
 
 @frappe.whitelist()
-def get_vermoegensentwicklung():
+def get_vermoegensentwicklung() -> dict:
 	"""Return asset overview for wealth calculation."""
 	# Immobilienwerte
 	immobilien = frappe.get_all(
@@ -92,12 +93,12 @@ def get_vermoegensentwicklung():
 	# Bankguthaben
 	bank_saldo = frappe.db.sql("""
 		SELECT COALESCE(SUM(kontostand_manuell), 0) FROM `tabBankkonto` WHERE aktiv = 1
-	""")[0][0] or 0
+	"")[0][0] or 0
 
 	# Darlehen (Restschuld als negatives Vermögen)
 	restschuld = frappe.db.sql("""
 		SELECT COALESCE(SUM(restschuld), 0) FROM `tabDarlehen` WHERE aktiv = 1
-	""")[0][0] or 0
+	"")[0][0] or 0
 
 	# Nettovermögen
 	nettovermoegen = immobilien_wert + fahrzeuge_wert + bank_saldo - restschuld
@@ -113,7 +114,7 @@ def get_vermoegensentwicklung():
 
 
 @frappe.whitelist()
-def get_budget_vs_ist(monat=None, jahr=None):
+def get_budget_vs_ist(monat: int, jahr: int) -> list:
     """Return budget vs. actual spending per category for given month/year."""
     from datetime import datetime
     now = datetime.now()
@@ -159,7 +160,7 @@ def get_budget_vs_ist(monat=None, jahr=None):
 
 
 @frappe.whitelist()
-def get_monatsuebersicht(monat=None, jahr=None):
+def get_monatsuebersicht(monat: int, jahr: int) -> dict:
     """Return monthly income, expenses, balance."""
     from datetime import datetime
     now = datetime.now()
@@ -195,11 +196,9 @@ def get_monatsuebersicht(monat=None, jahr=None):
         "saldo": einnahmen - ausgaben,
     }
 
-@frappe.whitelist()
-
 
 @frappe.whitelist()
-def get_buchungen_verlauf(monate=12):
+def get_buchungen_verlauf(monate: int = 12) -> list:
     """Return monthly income/expense totals for the last N months."""
     import calendar
     from datetime import date, datetime as dt
@@ -241,33 +240,4 @@ def get_buchungen_verlauf(monate=12):
             "ausgaben": ausgaben,
         })
 
-    return result
-
-@frappe.whitelist()
-def get_buchungen_verlauf(monate=12):
-    import calendar
-    from datetime import date, datetime as dt
-    monate = int(monate)
-    today = date.today()
-    result = []
-    for i in range(monate - 1, -1, -1):
-        month = today.month - i
-        year = today.year
-        while month <= 0:
-            month += 12
-            year -= 1
-        datum_von = f"{year}-{month:02d}-01"
-        last_day = calendar.monthrange(year, month)[1]
-        datum_bis = f"{year}-{month:02d}-{last_day}"
-        rows = frappe.db.sql("""
-            SELECT kategorie, COALESCE(SUM(ABS(betrag)), 0) as gesamt
-            FROM `tabBankbuchung`
-            WHERE datum BETWEEN %s AND %s
-            GROUP BY kategorie
-        """, (datum_von, datum_bis), as_dict=True)
-        einnahmen = ausgaben = 0.0
-        for r in rows:
-            if r.kategorie == "Eingang": einnahmen = float(r.gesamt)
-            elif r.kategorie == "Ausgang": ausgaben = float(r.gesamt)
-        result.append({"label": dt(year, month, 1).strftime("%b %y"), "einnahmen": einnahmen, "ausgaben": ausgaben})
     return result
