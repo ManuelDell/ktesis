@@ -204,7 +204,8 @@
         </div>
       </div>
     </div>
-  </div>
+
+    </div>
 </template>
 
 <script setup>
@@ -237,43 +238,27 @@ function fmtEuro(n) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
 }
 
-function ampelCardClass(ampel) {
-  switch (ampel) {
-    case 'rot':
-      return 'bg-surface-red-1 border-outline-red-1'
-    case 'gelb':
-      return 'bg-surface-amber-1 border-outline-amber-1'
-    default:
-      return 'bg-surface-gray-1 border-outline-gray-1'
+function ampelCardClass(color) {
+  switch (color) {
+    case 'rot': return 'bg-surface-red-1 border-outline-red-1'
+    case 'gelb': return 'bg-surface-amber-1 border-outline-amber-1'
+    default: return 'bg-surface-gray-1 border-outline-gray-1'
   }
 }
 
-function berechneTilgung(restschuld, zinssatz, monatsrate, extraMonatlich) {
+function berechneTilgung(restschuld, zinssatz, monatsrate, extra) {
   if (!restschuld || !monatsrate || monatsrate <= 0) return null
   const monatszins = (zinssatz || 0) / 100 / 12
-
-  function monateAbzahlen(rate) {
-    if (rate <= 0) return { monate: 9999, zinsen: 0 }
-    let schuld = restschuld
-    let zinsen = 0
-    let monate = 0
+  function calc(rate) {
+    let schuld = restschuld, zinsen = 0, monate = 0
     while (schuld > 0.01 && monate < 600) {
-      const z = schuld * monatszins
-      zinsen += z
-      schuld = schuld + z - rate
-      if (schuld < 0) schuld = 0
-      monate++
+      const z = schuld * monatszins; zinsen += z; schuld = schuld + z - rate
+      if (schuld < 0) schuld = 0; monate++
     }
     return { monate, zinsen }
   }
-
-  const alt = monateAbzahlen(monatsrate)
-  const neu = monateAbzahlen(monatsrate + extraMonatlich)
-  return {
-    monate_alt: alt.monate,
-    monate_neu: neu.monate,
-    zinsersparnis: Math.max(0, alt.zinsen - neu.zinsen),
-  }
+  const alt = calc(monatsrate), neu = calc(monatsrate + extra)
+  return { monate_alt: alt.monate, monate_neu: neu.monate, zinsersparnis: Math.max(0, alt.zinsen - neu.zinsen) }
 }
 
 const tilgungErgebnis = computed(() => {
@@ -306,7 +291,6 @@ onMounted(async () => {
     ampelLoading.value = false
   }
 
-  // Chart: Einnahmen/Ausgaben letzte 12 Monate
   try {
     const verlaufData = await fetch('/api/method/ktesis.api.dashboard.get_buchungen_verlauf?monate=12')
       .then(r => r.json()).then(d => d.message || [])
@@ -321,11 +305,7 @@ onMounted(async () => {
             { label: 'Ausgaben', data: verlaufData.map(r => r.ausgaben), backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4 },
           ],
         },
-        options: {
-          responsive: true,
-          plugins: { legend: { position: 'top' } },
-          scales: { y: { beginAtZero: true } },
-        },
+        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } },
       })
     }
   } catch (e) { console.error('Chart error:', e) }

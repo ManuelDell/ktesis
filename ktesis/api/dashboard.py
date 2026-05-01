@@ -242,3 +242,32 @@ def get_buchungen_verlauf(monate=12):
         })
 
     return result
+
+@frappe.whitelist()
+def get_buchungen_verlauf(monate=12):
+    import calendar
+    from datetime import date, datetime as dt
+    monate = int(monate)
+    today = date.today()
+    result = []
+    for i in range(monate - 1, -1, -1):
+        month = today.month - i
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        datum_von = f"{year}-{month:02d}-01"
+        last_day = calendar.monthrange(year, month)[1]
+        datum_bis = f"{year}-{month:02d}-{last_day}"
+        rows = frappe.db.sql("""
+            SELECT kategorie, COALESCE(SUM(ABS(betrag)), 0) as gesamt
+            FROM `tabBankbuchung`
+            WHERE datum BETWEEN %s AND %s
+            GROUP BY kategorie
+        """, (datum_von, datum_bis), as_dict=True)
+        einnahmen = ausgaben = 0.0
+        for r in rows:
+            if r.kategorie == "Eingang": einnahmen = float(r.gesamt)
+            elif r.kategorie == "Ausgang": ausgaben = float(r.gesamt)
+        result.append({"label": dt(year, month, 1).strftime("%b %y"), "einnahmen": einnahmen, "ausgaben": ausgaben})
+    return result
