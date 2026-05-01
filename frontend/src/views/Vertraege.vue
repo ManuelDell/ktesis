@@ -8,8 +8,10 @@
         <Button size="md" @click="openCreateDialog"
           variant="solid" theme="gray"
         >
-          <FeatherIcon name="plus" class="w-4 h-4" />
-          Neu
+          <span class="flex items-center gap-2 whitespace-nowrap">
+            <FeatherIcon name="plus" class="w-4 h-4" />
+            Neu
+          </span>
         </Button>
       </div>
 

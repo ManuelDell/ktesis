@@ -33,8 +33,10 @@
       <div class="px-4 py-3 border-b border-outline-gray-1 flex items-center justify-between">
         <h3 class="font-medium text-ink-gray-8">Soll-Ist-Vergleich</h3>
         <Button variant="outline" theme="gray" size="md" @click="showBudgetForm = !showBudgetForm">
-          <FeatherIcon name="settings" class="w-4 h-4" />
-          Budget bearbeiten
+          <span class="flex items-center gap-2 whitespace-nowrap">
+            <FeatherIcon name="settings" class="w-4 h-4" />
+            Budget bearbeiten
+          </span>
         </Button>
       </div>
       <div class="divide-y divide-outline-gray-1">
