@@ -116,5 +116,53 @@ class TestFrontendBackendSync(unittest.TestCase):
         )
 
 
+
+
+class TestDocTypeFieldConsistency(unittest.TestCase):
+    """Prueft ob Frontend-Feldnamen mit DocType JSON uebereinstimmen."""
+
+    def _get_doctype_fields(self, doctype: str) -> set[str]:
+        import json
+        dt_name = doctype.lower().replace(" ", "")
+        path = APP_ROOT / "ktesis" / "ktesis" / "doctype" / dt_name / f"{dt_name}.json"
+        if not path.exists():
+            return set()
+        d = json.loads(path.read_text())
+        return {f["fieldname"] for f in d.get("fields", []) if f.get("fieldname")}
+
+    def test_vertraege_vue_uses_valid_fields(self):
+        """Vertraege.vue darf nur Felder nutzen die in Vertrag DocType existieren."""
+        vertrag_fields = self._get_doctype_fields("vertrag")
+        if not vertrag_fields:
+            self.skipTest("Vertrag DocType JSON nicht gefunden")
+
+        vue_file = FRONTEND_SRC / "views" / "Vertraege.vue"
+        if not vue_file.exists():
+            self.skipTest("Vertraege.vue nicht gefunden")
+
+        text = vue_file.read_text()
+        used = set(re.findall(r'v\.([a-z_][a-z0-9_]*)', text))
+        ignore = {"name", "key", "ampel", "naechste_kuendigungsfrist", "class", "length"}
+        unknown = used - vertrag_fields - ignore
+        self.assertEqual(unknown, set(),
+            f"Vertraege.vue verwendet Felder die nicht in Vertrag DocType existieren: {unknown}")
+
+    def test_budget_vue_uses_valid_fields(self):
+        """Budget.vue darf nur Felder nutzen die in Budgetposten DocType existieren."""
+        bp_fields = self._get_doctype_fields("budgetposten")
+        if not bp_fields:
+            self.skipTest("Budgetposten DocType JSON nicht gefunden")
+
+        vue_file = FRONTEND_SRC / "views" / "Budget.vue"
+        if not vue_file.exists():
+            self.skipTest("Budget.vue nicht gefunden")
+
+        text = vue_file.read_text()
+        used = set(re.findall(r'(?:item|posten|bp)\.([a-z_][a-z0-9_]*)', text))
+        ignore = {"name", "ampel", "soll", "ist", "diff", "budget", "ueberschritten"}
+        unknown = used - bp_fields - ignore
+        self.assertEqual(unknown, set(),
+            f"Budget.vue verwendet Felder die nicht in Budgetposten existieren: {unknown}")
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
