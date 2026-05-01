@@ -35,8 +35,9 @@
      <NavItem href="#/wohnungen" icon="home" label="Wohnungen" :active="page === 'Wohnungen'" :collapsed="collapsed" />
      <NavItem href="#/vertraege" icon="file-text" label="Verträge" :active="page === 'Vertraege'" :collapsed="collapsed" />
      <NavItem href="#/darlehen" icon="dollar-sign" label="Darlehen" :active="page === 'Darlehen'" :collapsed="collapsed" />
-     <NavItem href="#/bankkonten" icon="credit-card" label="Bankkonten" :active="page === 'Bankkonten'" :collapsed="collapsed" />
-   </nav>
+    <NavItem href="#/bankkonten" icon="credit-card" label="Bankkonten" :active="page === 'Bankkonten'" :collapsed="collapsed" />
+    <NavItem href="#/budget" icon="bar-chart-2" label="Budget" :active="page === 'Budget'" :collapsed="collapsed" />
+  </nav>
 
    <!-- Footer -->
    <div class="kt-sb-foot">
@@ -105,6 +106,7 @@ truck: 'M1 3h15v13H1z M16 8h4l3 3v5h-2 M5 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0 M15 19a
 'file-text': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M16 13H8 M16 17H8 M10 9H8',
 'dollar-sign': 'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
 'credit-card': 'M1 10h22 M1 6a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6z M1 14h22',
+    'bar-chart-2': 'M18 20V10 M12 20V4 M6 20v-6',
   }
   
   const NavItem = {
