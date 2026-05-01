@@ -20,6 +20,11 @@ add_to_apps_screen = [
 	}
 ]
 
+# Deep-Link Routing: alle /ktesis/<path> → Vue Router übernimmt
+website_route_rules = [
+	{"from_route": "/ktesis/<path:app_path>", "to_route": "ktesis"},
+]
+
 # Includes in <head>
 # ------------------
 
