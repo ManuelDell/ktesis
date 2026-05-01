@@ -53,6 +53,12 @@ jobs:
             --skip-assets \
             ~/frappe-bench
 
+      - name: Redis starten
+        run: |
+          redis-server ~/frappe-bench/config/redis_cache.conf --daemonize yes
+          redis-server ~/frappe-bench/config/redis_queue.conf --daemonize yes
+          sleep 2
+
       - name: MariaDB Benutzer anlegen
         run: |
           mysql -h 127.0.0.1 -u root <<'SQL'
@@ -64,19 +70,12 @@ jobs:
       - name: bench new-site
         run: |
           cd ~/frappe-bench
-          python3 -c "
-import json
-with open('sites/common_site_config.json') as f:
-    cfg = json.load(f)
-cfg['db_host'] = '127.0.0.1'
-cfg['db_port'] = 3306
-with open('sites/common_site_config.json', 'w') as f:
-    json.dump(cfg, f)
-"
+          python3 -c "import json; cfg=json.load(open('sites/common_site_config.json')); cfg.update({'db_host':'127.0.0.1','db_port':3306}); json.dump(cfg, open('sites/common_site_config.json','w'))"
           bench new-site test_site \
             --db-root-username root \
             --db-root-password "" \
-            --admin-password admin
+            --admin-password admin \
+            --db-host 127.0.0.1
 
       - name: ktesis installieren
         run: |
