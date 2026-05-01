@@ -1,281 +1,151 @@
-# Ktesis — Vermögensverwaltung
+# ktesis — Persoenliche Vermoegensverwaltung
 
-[![Frappe](https://img.shields.io/badge/Frappe-15+-blue.svg)](https://frappeframework.com/)
-[![Vue 3](https://img.shields.io/badge/Vue-3-green.svg)](https://vuejs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-cyan.svg)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./license.txt)
-
-**Ktesis** ist eine private Vermögensverwaltung als Single-Page Application, gebaut auf dem Frappe Framework. Fahrzeuge, Immobilien, Verträge, Darlehen und Bankkonten — übersichtlich in einer App.
-
----
-
-## Screenshots
-
-| Dashboard | Liste | Detail |
-|-----------|-------|--------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Fahrzeuge](docs/screenshots/fahrzeuge-liste.png) | ![Detail](docs/screenshots/fahrzeug-detail.png) |
-
----
-
-> **Development Stage** — Ktesis ist eine persönliche Vermögensverwaltung in aktiver Entwicklung.
-> Nicht für Produktionsumgebungen mit sensiblen Fremddaten geeignet.
-
-## Stand der Entwicklung
-- Sprint 4 abgeschlossen — Budget-Planung, Soll-Ist-Vergleich, Buchungskategorien
-- **Sprint 5 abgeschlossen** — Dashboard-Upgrade: Chart.js Einnahmen/Ausgaben, Tilgungsrechner, neue APIs
-
-- **Sprint 1 abgeschlossen** — DocType-Validierungen, Permissions, DB-Index, Router-Fehlerbehandlung, Legacy-SPA entfernt
-- **Frontend:** Vue 3 SPA mit Vite
-- **Backend:** Frappe DocTypes mit Controller-Validierungen
-- **FinTS:** pausiert bis `product_id` geklärt
-- **Sprint 2 abgeschlossen** — CSV-Import (DKB, Sparkasse, ING), Duplikat-Erkennung, Import-Dialog
-- **Sprint 3 abgeschlossen** — HTTPS läuft (self-signed, Port 443), Port 80+2024 → HTTPS-Redirect, vollständige Frappe-nginx-Konfiguration
-- **Nächstes: Sprint 6 — Verträge 2.0 / Kündigungsassistent
-
----
-
-## Sprint 5 — Dashboard-Upgrade ✅
-- Chart.js Balkendiagramm: Einnahmen/Ausgaben der letzten 12 Monate
-- Was-wäre-wenn Tilgungsrechner: Schieberegler für Sondertilgung, Live-Berechnung der Restlaufzeit
-- API: get_buchungen_verlauf(), get_monatsuebersicht(), get_budget_vs_ist()
-
----
+Frappe-App zur strukturierten Verwaltung von Finanzen, Vermoegenswerten und Vertraegen. Vue 3 SPA auf Frappe-Basis.
 
 ## Features
 
-- **Dashboard** — KPI-Karten: Nettovermögen, Bankkonten, Darlehensrestschuld, monatliche Kosten
-- **Vertragsampel** — Rot/Gelb/Grün nach Restlaufzeit (< 30 / < 90 / > 90 Tage)
-- **Fahrzeuge** — Kennzeichen, Marke, Modell, KM-Stand, Kaufpreis, Fahrzeugbild
-- **Wohnungen** — Immobilienwerte, Abschreibungen, Status (bewohnt/vermietet/leerstehend)
-- **Verträge** — Versicherung, Miete, Wartung mit Kündigungsfrist-Tracking
-- **Darlehen** — Tilgungsplan-Berechnung, Restschuld, Zinsbindung
-- **Bankkonten** — Kontostände (manuell + FinTS-fähig), Buchungshistorie
-- **Anhänge** — Datei-Upload zu jedem Dokument
-- **Dark Mode** — Umschaltbar über die Sidebar
-- **HTTPS-Setup** *(experimentell)* — Self-signed SSL für lokalen Betrieb per Bench-Command
+### Vermoegensverwaltung
+- **Fahrzeuge** — Kennzeichen, FIN, Kilometerstand, Anschaffungswert, Fahrzeugbild
+- **Wohnungen** — Kaufpreis, Wohnflaeche, Baujahr, laufende Kosten, Status (bewohnt/vermietet/leerstehend)
+- **Darlehen** — Zinssatz, Laufzeit, monatliche Rate, Tilgungsplan-Berechnung
+- **Abschreibungen** — Abschreibungssatz, -betrag, Zuordnung zu Assets
 
----
+### Banking & Buchungen
+- **Bankkonten** — IBAN-Validierung, mehrere Konten, Kontostaende
+- **Bankbuchungen** — manuelle Erfassung + CSV-Import (DKB, Sparkasse, ING)
+- **CSV-Auto-Import** — erkennt Bankformat automatisch, verhindert Duplikate, Vorschau (5 Zeilen)
+- **Buchungskategorien** — Wohnen, Mobilitaet, Versicherung, Lebensmittel, Freizeit, Einkommen, Sonstiges
 
-## Technologien
+### Budget-Planung
+- **Budgetposten** — monatliche Sollbetrage je Kategorie
+- **Soll-Ist-Vergleich** — Monat auswaehlen, Fortschrittsbalken je Kategorie
 
-| Layer | Technologie |
-|-------|-------------|
-| Backend | Frappe Framework 15+ (Python) |
-| Frontend | Vue 3 + Vite |
-| Styling | Tailwind CSS + frappe-ui Semantic Colors |
-| UI-Komponenten | frappe-ui (Button, FormControl, Dialog, FileUploader, Badge) |
-| Router | Custom Hash-Router |
+### Vertraege
+- **Vertragsverwaltung** — Laufzeit, monatliche Kosten, Kuendigungsfrist
+- **Kuendigungsfristen-Ampel** — rot (<=14 Tage), gelb (<=60 Tage), gruen
+- **Dokument-Anhang** — PDF/Scan direkt am Vertrag ablegen
+- **E-Mail-Reminder** — woechentlicher Scheduler fuer nahende Kuendigungsfristen
 
----
+### Dashboard
+- **Einnahmen/Ausgaben-Chart** — Balkendiagramm der letzten 12 Monate (Chart.js)
+- **Vermoegensuebersicht** — Kacheln mit Gesamtvermoegen, offene Darlehen, Monatssaldo
+- **Tilgungsrechner** — Was-waere-wenn Sondertilgung mit Schieberegler
+
+## DocTypes
+
+| DocType | Beschreibung |
+|---------|-------------|
+| `Fahrzeug` | KFZ-Verwaltung |
+| `Wohnung` | Immobilien |
+| `Bankkonto` | Girokonten / Sparkonten |
+| `Bankbuchung` | Ein-/Ausgaben mit Kategorie |
+| `Darlehen` | Kredite und Hypotheken |
+| `Vertrag` | Abonnements und Vertraege |
+| `Abschreibung` | Wertverlust-Tracking |
+| `Budgetposten` | Monatliche Soll-Budgets |
+
+## Tech Stack
+
+- **Backend:** Python 3 / Frappe Framework
+- **Frontend:** Vue 3 + Vite (SPA via Frappe www-Route)
+- **Charts:** Chart.js
+- **UI:** frappe-ui Komponenten + eigene
+- **Datenbank:** MariaDB (via Frappe ORM)
+- **HTTPS:** nginx mit self-signed Cert (Port 443), Port 80/2024 -> Redirect
 
 ## Installation
 
 ### Voraussetzungen
-
-- Frappe Bench (Version 15+)
+- Frappe Bench (v15+)
 - Node.js 18+
+- Python 3.10+
 
-### 1. App holen und installieren
-
+### App installieren
 ```bash
-bench get-app https://github.com/ManuelDell/ktesis.git
-bench --site <deine-site> install-app ktesis
+cd /home/erpnext/frappe-bench
+bench get-app ktesis https://github.com/ManuelDell/ktesis.git
+bench --site development install-app ktesis
+bench migrate
 ```
 
 Der `install-app`-Befehl baut das Frontend automatisch (`npm install && npm run build`).
 Voraussetzung: Node.js und npm sind auf dem System installiert.
 
-### 2. Frappe neu starten
-
-```bash
-bench restart
-```
-
-### 4. App öffnen
-
-Das Ktesis-Icon erscheint auf dem Frappe Desk. Falls nicht:
-
-```bash
-bench --site <deine-site> clear-cache
-```
-
-Direkt erreichbar unter: `http://<deine-site>/ktesis`
-
----
-
-## HTTPS einrichten *(experimentell)*
-
-> **⚠ Development Stage** — Diese Funktion ist experimentell und nicht für Produktionsumgebungen
-> mit sensiblen Fremddaten geeignet. Self-signed Zertifikate bieten keine CA-Vertrauenskette;
-> Browser zeigen eine Zertifikatswarnung, die manuell bestätigt werden muss.
-
-Ktesis bringt einen Bench-Command mit, der automatisch:
-
-1. Ein self-signed RSA-4096-Zertifikat mit IP-SAN generiert (kein Domain-Name nötig)
-2. Eine nginx-Konfiguration nach `/etc/nginx/conf.d/ktesis-https.conf` schreibt
-3. `force_https` in der Site-Config aktiviert (alle Routen auf HTTPS)
-4. nginx validiert und neu lädt
-
-### Voraussetzungen
-
-- nginx installiert und aktiv
-- Root-Rechte (schreibt in `/etc/ssl/ktesis/` und `/etc/nginx/conf.d/`)
-- OpenSSL verfügbar
-
-### Ausführen
-
-```bash
-sudo bench setup-ktesis-https --site <deine-site>
-```
-
-Mit optionalen Parametern:
-
-```bash
-sudo bench setup-ktesis-https \
-  --site mysite.localhost \
-  --ip 192.168.1.100 \         # Standard: automatisch erkannt
-  --gunicorn-port 8000 \       # Standard: 8000
-  --socketio-port 9000 \       # Standard: 9000
-  --cert-dir /etc/ssl/ktesis \ # Standard: /etc/ssl/ktesis
-  --skip-nginx-reload          # nginx nicht automatisch neu laden
-```
-
-### Ergebnis
-
-Nach dem Command:
-
-- Ktesis erreichbar unter `https://<IP>/ktesis`
-- Frappe Desk erreichbar unter `https://<IP>/app`
-- Zertifikatswarnung im Browser **einmalig** bestätigen
-
-### Zertifikat erneuern
-
-```bash
-# Altes Zertifikat löschen und Command erneut ausführen
-sudo rm /etc/ssl/ktesis/server.{crt,key}
-sudo bench setup-ktesis-https --site <deine-site>
-```
-
-### Bekannte Einschränkungen
-
-- **Self-signed:** Browser zeigen Zertifikatswarnung — kein Let's Encrypt, keine CA
-- **IP-gebunden:** Zertifikat gilt für eine feste IP; bei IP-Wechsel neu generieren
-- **Keine Bench-Integration:** `bench setup nginx` überschreibt die Frappe-Config nicht, aber bei manuellem `bench setup nginx`-Aufruf die ktesis-nginx-Config separat prüfen
-- **Kein automatisches Renewal:** Zertifikat läuft nach 10 Jahren ab (kein Cronjob)
-- **Development only:** Für öffentliche Server Let's Encrypt + Domain verwenden
-
----
-
-## Architektur
-
-```
-ktesis/
-├── ktesis/                      # Python-Paket
-│   ├── api/                     # Whitelisted API-Endpunkte
-│   │   ├── __init__.py          # get_dashboard_stats
-│   │   ├── dashboard.py         # Vermögensentwicklung, Finanzübersicht, Ampel
-│   │   ├── fahrzeug.py          # CRUD Fahrzeug
-│   │   ├── wohnung.py           # CRUD Wohnung + Abschreibungen
-│   │   ├── vertrag.py           # CRUD Vertrag
-│   │   ├── darlehen.py          # CRUD Darlehen + Tilgungsplan
-│   │   ├── bankkonto.py         # CRUD Bankkonto + Buchungen
-│   │   └── attachments.py       # Datei-Anhänge
-│   ├── ktesis/                  # Frappe-Modul "Ktesis"
-│   │   └── doctype/             # DocType-Definitionen
-│   │       ├── fahrzeug/
-│   │       ├── wohnung/
-│   │       ├── vertrag/
-│   │       ├── darlehen/
-│   │       ├── bankkonto/
-│   │       ├── bankbuchung/
-│   │       └── abschreibung/
-│   ├── commands.py              # Bench CLI: setup-ktesis-https (experimentell)
-│   ├── install.py               # after_install Hook
-│   ├── hooks.py                 # App-Konfiguration
-│   ├── permissions.py           # Zugriffsregeln
-│   └── www/ktesis.py            # SPA-Einstiegspunkt + Guest-Redirect
-│
-├── frontend/                    # Vue 3 SPA
-│   └── src/
-│       ├── views/               # Dashboard, Fahrzeuge, Wohnungen, ...
-│       ├── components/          # Detail-Formulare, KachelCard, AttachmentList
-│       ├── composables/
-│       │   └── useApi.js        # Frappe REST API Wrapper
-│       ├── router.js            # Hash-Router
-│       └── App.vue              # Layout mit Sidebar
-│
-└── docs/screenshots/
-```
-
----
-
-## API-Übersicht
-
-### Dashboard
-
-| Endpunkt | Beschreibung |
-|----------|--------------|
-| `ktesis.api.get_dashboard_stats` | KPI-Zahlen (Counts, Salden) |
-| `ktesis.api.dashboard.get_finance_summary` | Bankkonten, Darlehen, Vertragskosten |
-| `ktesis.api.dashboard.get_vertrags_ampel` | Verträge mit Ampel-Status |
-| `ktesis.api.dashboard.get_vermoegensentwicklung` | Nettovermögen-Berechnung |
-
-### CRUD
-
-| DocType | Endpunkte |
-|---------|-----------|
-| Fahrzeug | `get_vehicles` · `create_vehicle` · `update_vehicle` · `delete_vehicle` |
-| Wohnung | `get_properties` · `create_property` · `update_property` · `delete_property` |
-| Vertrag | `get_contracts` · `create_contract` · `update_contract` · `delete_contract` |
-| Darlehen | `get_loans` · `create_loan` · `update_loan` · `delete_loan` · `calculate_amortization_schedule` |
-| Bankkonto | `get_bank_accounts` · `create_bank_account` · `update_bank_account` · `delete_bank_account` |
-
----
-
-## Roadmap
-
-- [x] **Phase 1** — Design-Fundament (frappe-ui Semantic Colors, SPA-Layout)
-- [x] **Phase 1.x** — FinTS-Sicherheitsfixes (PIN-Queue, HTTPS-Validierung, Job-Eigentümer)
-- [x] **Phase 1.x** — HTTPS-Setup-Command `bench setup-ktesis-https` *(experimentell)*
-- [ ] **Phase 2** — Dashboard-Upgrade (Charts, Budget-Planung, PDF-Export)
-- [ ] **Phase 3** — Verträge 2.0 (Kündigungsassistent, Dokumenten-Safe)
-- [ ] **Phase 4** — Erweiterte Module (Investitionen, Altersvorsorge, Steuern)
-- [ ] **Phase 5** — KI & Automatisierung (Ollama, Dokumenten-Parser, Telegram-Bot)
-
----
-
-## Entwicklung
-
 ### Frontend live (mit HMR)
-
 ```bash
 cd apps/ktesis/frontend
 npm run dev
 ```
 
-### Python-API testen
-
+### HTTPS einrichten (optional)
 ```bash
-echo "from ktesis.api import get_dashboard_stats; print(get_dashboard_stats())" \
-  | bench --site development console
+sudo bench setup-ktesis-https --site development
 ```
+Generiert self-signed Zertifikat und nginx-Konfiguration fuer Port 443. Alle HTTP-Routen werden auf HTTPS umgeleitet.
 
----
+**Bekannte Einschraenkungen:**
+- Self-signed: Browser zeigt Zertifikatswarnung — kein Let's Encrypt, keine CA
+- IP-gebunden: Zertifikat gilt fuer eine feste IP; bei IP-Wechsel neu generieren
+- Development only: Fuer oeffentliche Server Let's Encrypt + Domain verwenden
 
+### App oeffnen
+Das Ktesis-Icon erscheint auf dem Frappe Desk. Direkt erreichbar unter: `https://<deine-site>/ktesis`
 
-## Sprint 6 — Code-Qualität ✅
+## API
 
-- `useApi` Composable: zentraler fetch-Wrapper mit loading/error state
-- Python Type Hints in api/csv_import.py und api/dashboard.py
-- Unit Tests: test_csv_import.py (8 Tests, alle grün)
+Alle Endpunkte via `frappe.whitelist()` erreichbar:
 
+### Dashboard & Auswertungen
+| Endpoint | Beschreibung |
+|----------|-------------|
+| `ktesis.api.dashboard.get_finance_summary` | Vermoegensuebersicht-Kacheln |
+| `ktesis.api.dashboard.get_buchungen_verlauf` | Monatliche Ein-/Ausgaben (Chart) |
+| `ktesis.api.dashboard.get_budget_vs_ist` | Soll-Ist-Vergleich |
+| `ktesis.api.dashboard.get_vertraege_mit_fristen` | Vertraege mit Ampel-Status |
+| `ktesis.api.dashboard.get_monatsuebersicht` | Monatliche Uebersicht |
+| `ktesis.api.dashboard.get_vermoegensentwicklung` | Nettovermoegen-Berechnung |
+| `ktesis.api.dashboard.get_dashboard_stats` | KPI-Zahlen (Counts, Salden) |
 
-## Sprint 7 — Verträge 2.0 ✅
-- Kündigungsfristen-Kalkulator: automatische Berechnung nächster Deadline
-- Ampel-Anzeige (rot/gelb/grün) je nach Dringlichkeit
-- E-Mail-Reminder: wöchentlicher Scheduler für Verträge ≤ 60 Tage bis Kündigung
-- Dokument-Upload Feld in Vertrag DocType
-- Vertraege.vue mit Ampel-Karten und Frist-Anzeige
+### CSV-Import
+| Endpoint | Beschreibung |
+|----------|-------------|
+| `ktesis.api.csv_import.preview_csv` | CSV-Vorschau (5 Zeilen) |
+| `ktesis.api.csv_import.import_bankbuchungen` | CSV-Import mit Duplikat-Check |
+
+### CRUD-Endpunkte
+| DocType | Endpunkte |
+|---------|-----------|
+| Fahrzeug | `get_vehicles` * `create_vehicle` * `update_vehicle` * `delete_vehicle` |
+| Wohnung | `get_properties` * `create_property` * `update_property` * `delete_property` |
+| Vertrag | `get_contracts` * `create_contract` * `update_contract` * `delete_contract` |
+| Darlehen | `get_loans` * `create_loan` * `update_loan` * `delete_loan` * `calculate_amortization_schedule` |
+| Bankkonto | `get_bank_accounts` * `create_bank_account` * `update_bank_account` * `delete_bank_account` * `get_buchungen` |
+
+### Anhaenge
+| Endpoint | Beschreibung |
+|----------|-------------|
+| `ktesis.api.attachments.get_attachments` | Datei-Anhaenge zu einem Dokument |
+| `ktesis.api.attachments.delete_attachment` | Anhang loeschen |
+
+### FinTS (experimentell)
+| Endpoint | Beschreibung |
+|----------|-------------|
+| `ktesis.api.fints.get_bank_list` | Unterstuetzte Banken |
+| `ktesis.api.fints.start_fints_sync` | FinTS-Synchronisation starten |
+| `ktesis.api.fints.get_fints_sync_status` | Sync-Status abfragen |
+| `ktesis.api.fints.submit_tan` | TAN einreichen |
+
+## Frontend-Views
+
+| View | Pfad | Beschreibung |
+|------|------|-------------|
+| Dashboard | `/` | KPI-Kacheln, Charts, Tilgungsrechner |
+| Fahrzeuge | `/fahrzeuge` | Liste & Detail Fahrzeuge |
+| Wohnungen | `/wohnungen` | Liste & Detail Immobilien |
+| Bankkonten | `/bankkonten` | Konten, Buchungen, CSV-Import |
+| Vertraege | `/vertraege` | Vertragsliste mit Ampel & Kuendigungsfristen |
+| Darlehen | `/darlehen` | Darlehensliste & Tilgungsplan |
+| Budget | `/budget` | Budgetposten & Soll-Ist-Vergleich |
 
 ## Lizenz
 
