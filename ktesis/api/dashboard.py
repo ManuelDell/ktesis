@@ -241,3 +241,49 @@ def get_buchungen_verlauf(monate: int = 12) -> list:
         })
 
     return result
+
+
+@frappe.whitelist()
+def get_vertraege_mit_fristen() -> list:
+    """Alle Vertraege mit berechneter naechster Kuendigungsfrist und Ampel-Status."""
+    from datetime import date, timedelta
+    from dateutil.relativedelta import relativedelta
+
+    vertraege = frappe.get_all(
+        "Vertrag",
+        fields=["name", "vertragspartner", "vertragstyp", "vertragsbeginn",
+                "vertragsende", "kuendigungsfrist", "kosten_monatlich"],
+        order_by="vertragsende asc",
+    )
+
+    heute = date.today()
+    result = []
+    for v in vertraege:
+        ende = v.get("vertragsende")
+        frist_raw = v.get("kuendigungsfrist") or "1"
+        try:
+            frist = int(frist_raw)
+        except (ValueError, TypeError):
+            frist = 1
+        naechste_frist = None
+        ampel = "gruen"
+
+        if ende:
+            from frappe.utils import getdate
+            ende_dt = getdate(ende)
+            kuendigungs_deadline = ende_dt - relativedelta(months=frist)
+            naechste_frist = str(kuendigungs_deadline)
+
+            tage_bis_deadline = (kuendigungs_deadline - heute).days
+            if tage_bis_deadline < 0:
+                ampel = "abgelaufen"
+            elif tage_bis_deadline <= 14:
+                ampel = "rot"
+            elif tage_bis_deadline <= 60:
+                ampel = "gelb"
+            else:
+                ampel = "gruen"
+
+        result.append({**v, "naechste_kuendigungsfrist": naechste_frist, "ampel": ampel})
+
+    return result

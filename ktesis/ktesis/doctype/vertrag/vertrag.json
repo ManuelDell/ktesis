@@ -21,6 +21,7 @@
   "zahlungsrhythmus",
   "pdf_dokument",
   "notizen",
+  "dokument",
   "aktiv"
  ],
  "fields": [
@@ -74,7 +75,7 @@
   {
    "fieldname": "kuendigungsfrist",
    "fieldtype": "Data",
-   "label": "K\u00fcndigungsfrist"
+   "label": "Kündigungsfrist"
   },
   {
    "fieldname": "kosten_monatlich",
@@ -84,13 +85,13 @@
   {
    "fieldname": "kosten_jaehrlich",
    "fieldtype": "Currency",
-   "label": "Kosten j\u00e4hrlich"
+   "label": "Kosten jährlich"
   },
   {
    "fieldname": "zahlungsrhythmus",
    "fieldtype": "Select",
    "label": "Zahlungsrhythmus",
-   "options": "Monatlich\nViertelj\u00e4hrlich\nHalbj\u00e4hrlich\nJ\u00e4hrlich\nEinmalig"
+   "options": "Monatlich\nVierteljährlich\nHalbjährlich\nJährlich\nEinmalig"
   },
   {
    "fieldname": "pdf_dokument",
@@ -101,6 +102,12 @@
    "fieldname": "notizen",
    "fieldtype": "Text",
    "label": "Notizen"
+  },
+  {
+   "fieldname": "dokument",
+   "fieldtype": "Attach",
+   "label": "Dokument",
+   "in_list_view": 0
   },
   {
    "default": "1",
