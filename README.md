@@ -27,7 +27,8 @@
 - **Backend:** Frappe DocTypes mit Controller-Validierungen
 - **FinTS:** pausiert bis `product_id` geklärt
 - **Sprint 2 abgeschlossen** — CSV-Import (DKB, Sparkasse, ING), Duplikat-Erkennung, Import-Dialog
-- **Nächstes:** Sprint 3 — HTTPS Setup
+- **Sprint 3 abgeschlossen** — HTTPS läuft (self-signed, Port 443)
+- **Nächstes:** Sprint 4 — Budget-Planung
 
 ---
 
