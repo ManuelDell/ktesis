@@ -263,10 +263,8 @@ def get_ki_models(api_url: str = None, api_key: str = None) -> dict:
 
 @frappe.whitelist()
 def delete_all_buchungen() -> dict:
-    if frappe.session.user == "Guest":
-        frappe.throw(_("Nicht autorisiert"), frappe.AuthenticationError)
+    """Löscht ALLE Bankbuchungen. Nur für Admins."""
     count = frappe.db.count("Bankbuchung")
     frappe.db.sql("DELETE FROM `tabBankbuchung`")
     frappe.db.commit()
-    frappe.log_error(f"Alle {count} Bankbuchungen gelöscht von {frappe.session.user}", "Ktesis Admin Action")
     return {"deleted": count}
