@@ -183,6 +183,7 @@ def preview_csv(bankkonto: str, csv_content: str) -> dict:
         if datum:
             is_duplicate = (datum, buchungstext[:140], betrag) in existing
         rows.append({
+            "bankkonto": bankkonto,
             "datum": datum,
             "buchungstext": buchungstext[:140],
             "betrag": betrag,
@@ -292,6 +293,11 @@ def import_bankbuchungen_rows(bankkonto: str, rows: str | list) -> dict:
     errors = []
 
     for i, row in enumerate(rows):
+        # Bankkonto aus Parameter oder aus Row (Fallback)
+        effective_bankkonto = bankkonto or row.get("bankkonto") or ""
+        if not effective_bankkonto:
+            errors.append(f"Zeile {i+1}: Kein Bankkonto angegeben")
+            continue
         if row.get("duplicate"):
             duplicates += 1
             continue
@@ -305,7 +311,7 @@ def import_bankbuchungen_rows(bankkonto: str, rows: str | list) -> dict:
                 errors.append(f"Zeile {i+1}: Datum in der Zukunft, übersprungen")
                 continue
             already = frappe.db.exists("Bankbuchung", {
-                "bankkonto": bankkonto,
+                "bankkonto": effective_bankkonto,
                 "datum": datum,
                 "buchungstext": buchungstext,
                 "betrag": betrag,
@@ -315,7 +321,7 @@ def import_bankbuchungen_rows(bankkonto: str, rows: str | list) -> dict:
                 continue
             doc = frappe.get_doc({
                 "doctype": "Bankbuchung",
-                "bankkonto": bankkonto,
+                "bankkonto": effective_bankkonto,
                 "datum": datum,
                 "buchungstext": buchungstext,
                 "betrag": betrag,
