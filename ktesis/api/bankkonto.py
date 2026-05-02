@@ -76,7 +76,7 @@ def get_buchungen(limit=50):
 	"""Return recent bank transactions with account names."""
 	buchungen = frappe.get_all(
 		"Bankbuchung",
-		fields=["name", "bankkonto", "datum", "buchungstext", "betrag", "kategorie", "notizen"],
+		fields=["name", "bankkonto", "datum", "buchungstext", "betrag", "kategorie", "notizen", "budgetposten"],
 		limit=int(limit),
 		order_by="datum desc",
 	)

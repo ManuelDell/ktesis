@@ -91,6 +91,12 @@
             <FeatherIcon name="list" class="w-4 h-4 text-ink-gray-5" />
             Buchungen
           </h3>
+          <Button variant="outline" theme="gray" size="md" :loading="autoAssigning" @click="autoAssignBudgetposten">
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <FeatherIcon name="zap" class="w-4 h-4" />
+              Auto-zuordnen
+            </span>
+          </Button>
           <Button variant="outline" theme="gray" size="md" @click="openImport(listData.find(i => i.name === selectedName) || { name: selectedName })">
             <span class="flex items-center gap-2 whitespace-nowrap">
               <FeatherIcon name="upload" class="w-4 h-4" />
@@ -111,6 +117,7 @@
                 <th class="text-left py-3 px-4 font-medium text-ink-gray-5">Buchungstext</th>
                 <th class="text-right py-3 px-4 font-medium text-ink-gray-5">Betrag</th>
                 <th class="text-center py-3 px-4 font-medium text-ink-gray-5">Typ</th>
+                <th class="text-left py-3 px-4 font-medium text-ink-gray-5">Budgettopf</th>
               </tr>
             </thead>
             <tbody>
@@ -125,6 +132,16 @@
                   <Badge :theme="b.kategorie === 'Eingang' ? 'green' : 'red'" variant="subtle" size="sm">
                     {{ b.kategorie }}
                   </Badge>
+                </td>
+                <td class="py-2 px-4">
+                  <select
+                    :value="b.budgetposten || ''"
+                    @change="updateBudgetposten(b.name, $event.target.value)"
+                    class="border border-outline-gray-2 rounded px-2 py-1 text-xs bg-white max-w-[130px] w-full"
+                  >
+                    <option value="">— kein —</option>
+                    <option v-for="bp in budgetpostenList" :key="bp.name" :value="bp.name">{{ bp.kategorie }}</option>
+                  </select>
                 </td>
               </tr>
             </tbody>
@@ -196,7 +213,7 @@ import { useApi } from '../composables/useApi'
 import BankkontoDetail from '../components/BankkontoDetail.vue'
 import CsvImportDialog from '../components/CsvImportDialog.vue'
 
-const { list, delete_, call } = useApi()
+const { list, delete_, call, update } = useApi()
 
 const listData = ref([])
 const loading = ref(false)
@@ -211,6 +228,8 @@ const importBankkonto = ref('')
 const importBankkontoBezeichnung = ref('')
 const buchungen = ref([])
 const buchungenLoading = ref(false)
+const budgetpostenList = ref([])
+const autoAssigning = ref(false)
 
 async function loadList() {
   loading.value = true
@@ -315,8 +334,25 @@ function onImported() {
   loadList()
 }
 
-onMounted(() => {
-  loadList()
+async function autoAssignBudgetposten() {
+  autoAssigning.value = true
+  try {
+    await call('ktesis.api.csv_import.auto_assign_budgetposten', { bankkonto: selectedName.value })
+    await loadBuchungen()
+  } finally {
+    autoAssigning.value = false
+  }
+}
+
+async function updateBudgetposten(buchungName, value) {
+  const b = buchungen.value.find(x => x.name === buchungName)
+  if (b) b.budgetposten = value
+  await update('Bankbuchung', buchungName, { budgetposten: value || null })
+}
+
+onMounted(async () => {
+  await loadList()
+  budgetpostenList.value = await list('Budgetposten', { fields: ['name', 'kategorie'], limit: 50 }) || []
   loadBuchungen()
 })
 </script>

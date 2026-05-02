@@ -319,3 +319,26 @@ def import_bankbuchungen_rows(bankkonto: str, rows: str | list) -> dict:
 
     frappe.db.commit()
     return {"imported": imported, "duplicates": duplicates, "errors": errors}
+
+@frappe.whitelist()
+def auto_assign_budgetposten(bankkonto: str = None) -> dict:
+    """Auto-assign budgetposten to all Bankbuchungen without one, using category matching."""
+    bp_list = frappe.get_all("Budgetposten", fields=["name", "kategorie"])
+    bp_map = {b.kategorie: b.name for b in bp_list}
+    if not bp_map:
+        return {"assigned": 0}
+
+    filters = {"budgetposten": ["is", "not set"], "kategorie": "Ausgang"}
+    if bankkonto:
+        filters["bankkonto"] = bankkonto
+
+    buchungen = frappe.get_all("Bankbuchung", filters=filters, fields=["name", "buchungstext"])
+    assigned = 0
+    for b in buchungen:
+        bp_name = bp_map.get(_auto_kategorisieren(b.buchungstext))
+        if bp_name:
+            frappe.db.set_value("Bankbuchung", b.name, "budgetposten", bp_name)
+            assigned += 1
+
+    frappe.db.commit()
+    return {"assigned": assigned}
