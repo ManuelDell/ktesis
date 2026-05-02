@@ -40,7 +40,7 @@
         </Button>
       </div>
       <div class="divide-y divide-outline-gray-1">
-        <div v-for="item in kategorien" :key="item.kategorie" class="px-4 py-3">
+        <div v-for="item in kategorien" :key="item.kategorie" class="px-4 py-3 cursor-pointer hover:bg-surface-gray-1 transition-colors" @click="toggleKat(item.kategorie)">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium text-ink-gray-8">{{ item.kategorie }}</span>
             <div class="text-sm">
@@ -59,6 +59,19 @@
             />
           </div>
           <div v-else class="text-xs text-ink-gray-4 mt-1">Kein Budget definiert</div>
+          <!-- Aufklappbare Buchungsliste -->
+          <div v-if="expandedKat === item.kategorie && buchungenByKat[item.kategorie]" class="mt-2 space-y-1">
+            <div v-if="!buchungenByKat[item.kategorie].length" class="text-xs text-ink-gray-4 pl-1">Keine Buchungen in diesem Monat</div>
+            <div
+              v-for="b in buchungenByKat[item.kategorie]"
+              :key="b.name"
+              class="flex items-center justify-between text-xs px-2 py-1 rounded bg-surface-gray-1"
+            >
+              <span class="text-ink-gray-5 shrink-0 mr-2">{{ formatDate(b.datum) }}</span>
+              <span class="text-ink-gray-7 truncate flex-1">{{ b.buchungstext }}</span>
+              <span class="text-ink-red-4 font-medium ml-2 shrink-0">{{ formatCurrency(b.betrag) }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -110,6 +123,8 @@ const loadingBudgets = ref(false)
 const savingBudget = ref(false)
 const budgetForm = ref({})
 const existingBudgets = ref([])
+const expandedKat = ref(null)
+const buchungenByKat = ref({})
 
 const monate = [
   { value: 1, label: 'Januar' }, { value: 2, label: 'Februar' },
@@ -167,6 +182,37 @@ async function saveBudgets() {
   } finally {
     savingBudget.value = false
   }
+}
+
+async function toggleKat(kat) {
+  if (expandedKat.value === kat) {
+    expandedKat.value = null
+    return
+  }
+  expandedKat.value = kat
+  if (buchungenByKat.value[kat]) return
+  // Lade Buchungen für diese Kategorie im aktuellen Monat
+  const datum_von = `${selectedJahr.value}-${String(selectedMonat.value).padStart(2,'0')}-01`
+  const nextM = selectedMonat.value === 12 ? 1 : selectedMonat.value + 1
+  const nextY = selectedMonat.value === 12 ? selectedJahr.value + 1 : selectedJahr.value
+  const datum_bis = `${nextY}-${String(nextM).padStart(2,'0')}-01`
+  const rows = await list('Bankbuchung', {
+    filters: [
+      ['datum', '>=', datum_von],
+      ['datum', '<', datum_bis],
+      ['kategorie', '=', 'Ausgang'],
+      ['buchungskategorie', '=', kat],
+    ],
+    fields: ['name', 'datum', 'buchungstext', 'betrag', 'budgetposten'],
+    limit: 50,
+    orderBy: 'datum desc',
+  })
+  buchungenByKat.value[kat] = rows || []
+}
+
+function formatDate(val) {
+  if (!val) return '—'
+  return new Date(val).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 function formatCurrency(value) {

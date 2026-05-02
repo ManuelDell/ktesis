@@ -114,40 +114,52 @@ def get_vermoegensentwicklung() -> dict:
 
 
 @frappe.whitelist()
-def get_budget_vs_ist(monat: int, jahr: int) -> list:
-    """Return budget vs. actual spending per category for given month/year."""
+def get_budget_vs_ist(monat: int = None, jahr: int = None) -> dict:
+    """Return budget vs. actual spending. Aggregates by budgetposten link OR buchungskategorie fallback."""
     from datetime import datetime
     now = datetime.now()
     monat = int(monat or now.month)
     jahr = int(jahr or now.year)
 
     datum_von = f"{jahr}-{monat:02d}-01"
-    if monat == 12:
-        datum_bis = f"{jahr+1}-01-01"
-    else:
-        datum_bis = f"{jahr}-{monat+1:02d}-01"
+    datum_bis = f"{jahr+1}-01-01" if monat == 12 else f"{jahr}-{monat+1:02d}-01"
 
-    # Get budgets
-    budgets = frappe.get_all("Budgetposten", fields=["kategorie", "betrag_monatlich"])
-    budget_map = {b.kategorie: float(b.betrag_monatlich or 0) for b in budgets}
+    budgets = frappe.get_all("Budgetposten", fields=["name", "kategorie", "betrag_monatlich"])
+    budget_map = {b.name: {"kategorie": b.kategorie, "budget": float(b.betrag_monatlich or 0)} for b in budgets}
 
-    # Get actual spending per buchungskategorie
-    ist_rows = frappe.db.sql("""
+    # Aggregate by budgetposten link (primary)
+    linked_rows = frappe.db.sql("""
+        SELECT budgetposten, SUM(ABS(betrag)) as gesamt
+        FROM `tabBankbuchung`
+        WHERE datum >= %s AND datum < %s
+          AND kategorie = 'Ausgang'
+          AND budgetposten IS NOT NULL AND budgetposten != ''
+        GROUP BY budgetposten
+    """, (datum_von, datum_bis), as_dict=True)
+    linked_map = {r.budgetposten: float(r.gesamt or 0) for r in linked_rows}
+
+    # Aggregate by buchungskategorie (fallback for unlinked bookings)
+    fallback_rows = frappe.db.sql("""
         SELECT buchungskategorie, SUM(ABS(betrag)) as gesamt
         FROM `tabBankbuchung`
         WHERE datum >= %s AND datum < %s
           AND kategorie = 'Ausgang'
+          AND (budgetposten IS NULL OR budgetposten = '')
           AND buchungskategorie IS NOT NULL AND buchungskategorie != ''
         GROUP BY buchungskategorie
     """, (datum_von, datum_bis), as_dict=True)
-
-    ist_map = {r.buchungskategorie: float(r.gesamt or 0) for r in ist_rows}
+    fallback_map = {r.buchungskategorie: float(r.gesamt or 0) for r in fallback_rows}
 
     kategorien = ["Wohnen", "Mobilitaet", "Versicherung", "Lebensmittel", "Freizeit", "Einkommen", "Sonstiges"]
     result = []
     for kat in kategorien:
-        budget = budget_map.get(kat, 0)
-        ist = ist_map.get(kat, 0)
+        # Find budget entry for this category
+        bp = next((b for b in budgets if b.kategorie == kat), None)
+        budget = float(bp.betrag_monatlich or 0) if bp else 0
+        # Ist: linked buchungen + fallback
+        ist_linked = linked_map.get(bp.name, 0) if bp else 0
+        ist_fallback = fallback_map.get(kat, 0)
+        ist = ist_linked + ist_fallback
         result.append({
             "kategorie": kat,
             "budget": budget,
@@ -156,7 +168,7 @@ def get_budget_vs_ist(monat: int, jahr: int) -> list:
             "ueberschritten": ist > budget and budget > 0,
         })
 
-    return {"monat": monat, "jahr": jahr, "kategorien": result}
+    return {"kategorien": result}
 
 
 @frappe.whitelist()

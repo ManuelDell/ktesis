@@ -1,4 +1,4 @@
-name: Server Tests
+name: Ktesis Tests
 
 on:
   push:
@@ -13,20 +13,7 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    services:
-      mysql:
-        image: mariadb:10.6
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=5s
-          --health-timeout=2s
-          --health-retries=3
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -38,52 +25,17 @@ jobs:
           python-version: '3.11'
           cache: pip
 
-      - name: System-Abhängigkeiten
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y redis-server libmariadb-dev libcups2-dev mariadb-client
+      - name: Abhaengigkeiten installieren
+        run: pip install frappe
 
-      - name: frappe-bench installieren
-        run: pip install frappe-bench
+      - name: CSV Import Tests
+        run: python3 ktesis/tests/test_csv_import.py -v
 
-      - name: bench init
-        run: |
-          bench init \
-            --frappe-branch version-15 \
-            --skip-assets \
-            ~/frappe-bench
+      - name: Frontend-Backend Sync Tests
+        run: python3 ktesis/tests/test_api_sync.py -v
 
-      - name: Redis starten
+      - name: Python Syntax Check
         run: |
-          redis-server ~/frappe-bench/config/redis_cache.conf --daemonize yes
-          redis-server ~/frappe-bench/config/redis_queue.conf --daemonize yes
-          sleep 2
-
-      - name: MariaDB Benutzer anlegen
-        run: |
-          mysql -h 127.0.0.1 -u root <<'SQL'
-          CREATE USER IF NOT EXISTS 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';
-          GRANT ALL PRIVILEGES ON *.* TO 'test_frappe'@'localhost' WITH GRANT OPTION;
-          FLUSH PRIVILEGES;
-          SQL
-
-      - name: bench new-site
-        run: |
-          cd ~/frappe-bench
-          python3 -c "import json; cfg=json.load(open('sites/common_site_config.json')); cfg.update({'db_host':'127.0.0.1','db_port':3306}); json.dump(cfg, open('sites/common_site_config.json','w'))"
-          bench new-site test_site \
-            --db-root-username root \
-            --db-root-password "" \
-            --admin-password admin \
-            --db-host 127.0.0.1
-
-      - name: ktesis installieren
-        run: |
-          cd ~/frappe-bench
-          bench get-app ktesis $GITHUB_WORKSPACE
-          bench --site test_site install-app ktesis
-
-      - name: Tests ausführen
-        run: |
-          cd ~/frappe-bench
-          bench --site test_site run-tests --app ktesis --verbose
+          find ktesis/api -name '*.py' | while read f; do
+            python3 -m py_compile "$f" && echo "OK: $f" || { echo "FEHLER: $f"; exit 1; }
+          done

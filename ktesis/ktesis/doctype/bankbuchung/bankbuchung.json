@@ -11,6 +11,7 @@
   "buchungstext",
   "betrag",
   "kategorie",
+  "budgetposten",
   "buchungskategorie",
   "notizen"
  ],
@@ -55,6 +56,14 @@
    "label": "Kategorie",
    "options": "Eingang\nAusgang",
    "reqd": 1
+  },
+  {
+   "fieldname": "budgetposten",
+   "fieldtype": "Link",
+   "label": "Budgetposten",
+   "options": "Budgetposten",
+   "in_list_view": 0,
+   "reqd": 0
   },
   {
    "fieldname": "buchungskategorie",

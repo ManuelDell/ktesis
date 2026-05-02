@@ -115,9 +115,20 @@ class TestFrontendBackendSync(unittest.TestCase):
             "import_bankbuchungen hat keinen @frappe.whitelist() Decorator!"
         )
 
+    def test_import_bankbuchungen_rows_is_whitelisted(self):
+        """import_bankbuchungen_rows() muss @frappe.whitelist() haben."""
+        self.assertIn(
+            "ktesis.api.csv_import.import_bankbuchungen_rows",
+            self.backend_endpoints,
+            "import_bankbuchungen_rows hat keinen @frappe.whitelist() Decorator!"
+        )
 
-
-
+    def test_preview_csv_returns_budgetposten_field(self):
+        """preview_csv soll budgetposten und duplicate Felder zurueckgeben."""
+        csv_import = BACKEND_API / "csv_import.py"
+        source = csv_import.read_text(errors="ignore")
+        self.assertIn('"budgetposten"', source, "budgetposten-Feld fehlt in preview_csv")
+        self.assertIn('"duplicate"', source, "duplicate-Flag fehlt in preview_csv")
 class TestDocTypeFieldConsistency(unittest.TestCase):
     """Prueft ob Frontend-Feldnamen mit DocType JSON uebereinstimmen."""
 

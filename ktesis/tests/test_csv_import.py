@@ -25,7 +25,7 @@ csv_path = '/home/erpnext/frappe-bench/apps/ktesis/ktesis/api/csv_import.py'
 with open(csv_path) as f:
     source = f.read()
 
-# Ersetze '@frappe.whitelist()\nKATEGORIE_KEYWORDS = ...' durch ''
+# Ersetze '@frappe.whitelist()\nKATEGORIE_KEYWORDS' durch ''
 # Finde die Position
 old = "@frappe.whitelist()\nKATEGORIE_KEYWORDS"
 new = "# @frappe.whitelist() -- entfernt fuer standalone-Tests\nKATEGORIE_KEYWORDS"
@@ -39,6 +39,8 @@ exec(compile(source, csv_path, 'exec'), ns)
 _parse_german_amount = ns['_parse_german_amount']
 _parse_date = ns['_parse_date']
 _decode_csv = ns['_decode_csv']
+_detect_format = ns['_detect_format']
+_find_header_row = ns['_find_header_row']
 
 
 class TestParseGermanAmount(unittest.TestCase):
@@ -73,6 +75,70 @@ class TestDecodeCSV(unittest.TestCase):
         content = "Buchungstag;Betr\xe4ge\n".encode("iso-8859-1")
         result = _decode_csv(content)
         self.assertIn("Buchungstag", result)
+
+
+class TestBankFormatDetection(unittest.TestCase):
+    """Tests that each bank format is correctly detected from its header line."""
+
+    def _detect_from_csv(self, csv_text):
+        lines = csv_text.strip().splitlines()
+        idx = _find_header_row(lines)
+        header = lines[idx] if lines else ""
+        fmt_name, _ = _detect_format(header)
+        return fmt_name
+
+    def test_detect_dkb(self):
+        csv = '"Buchungstag";"Wertstellung";"Buchungstext";"Betrag (EUR)";"Glaeubiger-ID"\n"01.05.2024";"01.05.2024";"Test";"- 10,00";""'
+        self.assertEqual(self._detect_from_csv(csv), "dkb")
+
+    def test_detect_sparkasse(self):
+        csv = '"Auftragskonto";"Buchungstag";"Buchungstext";"Betrag"\n"DE123...";"01.05.2024";"Test";"-10,00"'
+        self.assertEqual(self._detect_from_csv(csv), "sparkasse")
+
+    def test_detect_ing(self):
+        csv = '"Buchung";"Valuta";"Auftraggeber/Empfaenger";"Buchungstext";"Betrag"\n"01.05.2024";"01.05.2024";"Test";"Test";"-10,00"'
+        self.assertEqual(self._detect_from_csv(csv), "ing")
+
+    def test_detect_comdirect(self):
+        csv = '"Buchungstag";"Wertstellung (Buchungstag)";"Vorgang";"Buchungstext";"Umsatz in EUR"\n"01.05.2024";"01.05.2024";"Lastschrift";"Amazon";"- 29,99"'
+        self.assertEqual(self._detect_from_csv(csv), "comdirect")
+
+    def test_detect_commerzbank(self):
+        csv = '"Buchungstag";"Wertstellung";"Buchungstext";"Auftraggeber / Beg\u00fcnstigter";"IBAN";"BIC";"Betrag EUR"\n"01.05.2024";"01.05.2024";"Lastschrift";"Amazon";"DE123";"COBADEFF";"-29,99"'
+        self.assertEqual(self._detect_from_csv(csv), "commerzbank")
+
+    def test_detect_deutsche_bank(self):
+        csv = '"Buchungstag";"Wert";"Umsatzart";"Beg\u00fcnstigter / Auftraggeber";"Verwendungszweck";"Betrag EUR"\n"01.05.2024";"01.05.2024";"Lastschrift";"Amazon";"Kauf";"-29,99"'
+        self.assertEqual(self._detect_from_csv(csv), "deutsche_bank")
+
+    def test_detect_n26(self):
+        csv = '"Datum","Empf\u00e4nger","Kontonummer","Transaktionstyp","Verwendungszweck","Betrag (EUR)"\n"2024-05-01","Amazon","","MasterCard-Zahlung","Kauf","-29.99"'
+        self.assertEqual(self._detect_from_csv(csv), "n26")
+
+    def test_detect_trade_republic(self):
+        csv = '"Datum";"Typ";"Beschreibung";"Betrag (EUR)";"ISIN"\n"2024-05-01";"Einzahlung";"Geldeingang";"100,00";""'
+        self.assertEqual(self._detect_from_csv(csv), "trade_republic")
+
+
+class TestParseGermanAmountExtended(unittest.TestCase):
+    """Tests for edge cases in amount parsing."""
+
+    def test_comdirect_minus_space(self):
+        """Comdirect uses '- 29,99' (space after minus)."""
+        self.assertAlmostEqual(_parse_german_amount("- 29,99"), -29.99)
+
+    def test_comdirect_plus_thousands(self):
+        """Comdirect uses '+ 1.200,00'."""
+        self.assertAlmostEqual(_parse_german_amount("+ 1.200,00"), 1200.0)
+
+    def test_n26_dot_decimal(self):
+        """N26 uses English decimal format."""
+        result = _parse_german_amount("-29.99", decimal_sep=".")
+        self.assertAlmostEqual(result, -29.99)
+
+    def test_n26_positive(self):
+        result = _parse_german_amount("1234.56", decimal_sep=".")
+        self.assertAlmostEqual(result, 1234.56)
 
 
 if __name__ == "__main__":

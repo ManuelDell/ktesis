@@ -1,14 +1,14 @@
 <template>
   <Dialog
-    :options="{ title: `Kontoauszug importieren — ${bankkontoBezeichnung}`, size: 'xl' }"
+    :options="{ title: `Kontoauszug importieren — ${bankkontoBezeichnung}`, size: '3xl' }"
     :modelValue="modelValue"
     @update:modelValue="$emit('update:modelValue', $event)"
   >
     <template #body>
       <div class="p-5 space-y-5">
 
-        <!-- Step 1: File picker -->
-        <div v-if="!previewRows.length && !result">
+        <!-- Schritt 1: Datei auswählen -->
+        <div v-if="step === 1">
           <label class="block text-sm font-medium text-ink-gray-7 mb-2">CSV-Datei auswählen</label>
           <div
             class="border-2 border-dashed border-outline-gray-3 rounded-lg p-8 text-center cursor-pointer hover:border-outline-gray-5 transition-colors"
@@ -17,64 +17,96 @@
             @drop.prevent="onDrop"
           >
             <FeatherIcon name="upload-cloud" class="w-10 h-10 mx-auto text-ink-gray-4 mb-2" />
-            <p class="text-sm text-ink-gray-5">CSV hier ablegen oder <span class="text-ink-gray-8 font-medium underline">auswählen</span></p>
-            <p class="text-xs text-ink-gray-4 mt-1">DKB, Sparkasse, ING — automatische Erkennung</p>
+            <p class="text-sm text-ink-gray-5">
+              CSV hier ablegen oder <span class="text-ink-gray-8 font-medium underline">auswählen</span>
+            </p>
+            <p class="text-xs text-ink-gray-4 mt-1">
+              DKB · Sparkasse · ING · Comdirect · Commerzbank · Deutsche Bank · N26 · Trade Republic
+            </p>
           </div>
           <input ref="fileInput" type="file" accept=".csv" class="hidden" @change="onFileSelected" />
           <p v-if="fileError" class="mt-2 text-sm text-ink-red-4">{{ fileError }}</p>
+          <div v-if="loading" class="mt-3 text-sm text-ink-gray-5 text-center">Lade Vorschau…</div>
         </div>
 
-        <!-- Step 2: Preview -->
-        <div v-if="previewRows.length && !result">
+        <!-- Schritt 2: Vorschau-Tabelle -->
+        <div v-if="step === 2">
           <div class="flex items-center justify-between mb-3">
-            <div>
+            <div class="flex items-center gap-2">
               <span class="text-sm font-medium text-ink-gray-7">Vorschau</span>
-              <Badge theme="blue" variant="subtle" size="sm" class="ml-2">{{ detectedFormat?.toUpperCase() }}</Badge>
+              <Badge theme="blue" variant="subtle" size="sm">{{ detectedFormat?.toUpperCase() }}</Badge>
+              <span class="text-xs text-ink-gray-4">
+                {{ newRows.length }} neu · {{ dupRows.length }} Duplikate
+              </span>
             </div>
-            <button @click="reset" class="text-xs text-ink-gray-5 hover:text-ink-gray-8">Andere Datei wählen</button>
+            <button @click="reset" class="text-xs text-ink-gray-5 hover:text-ink-gray-8">Andere Datei</button>
           </div>
-          <div class="border border-outline-gray-2 rounded-lg overflow-hidden mb-4">
-            <table class="w-full text-sm">
-              <thead class="bg-surface-gray-1">
+
+          <div class="border border-outline-gray-2 rounded-lg overflow-auto max-h-96 mb-4">
+            <table class="w-full text-xs">
+              <thead class="bg-surface-gray-1 sticky top-0">
                 <tr>
-                  <th class="text-left py-2 px-3 font-medium text-ink-gray-5">Datum</th>
+                  <th class="text-left py-2 px-3 font-medium text-ink-gray-5 whitespace-nowrap">Datum</th>
                   <th class="text-left py-2 px-3 font-medium text-ink-gray-5">Buchungstext</th>
-                  <th class="text-right py-2 px-3 font-medium text-ink-gray-5">Betrag</th>
-                  <th class="text-center py-2 px-3 font-medium text-ink-gray-5">Typ</th>
+                  <th class="text-right py-2 px-3 font-medium text-ink-gray-5 whitespace-nowrap">Betrag</th>
+                  <th class="text-left py-2 px-3 font-medium text-ink-gray-5 whitespace-nowrap">Budgetposten</th>
+                  <th class="text-center py-2 px-3 font-medium text-ink-gray-5">Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(row, i) in previewRows" :key="i" class="border-t border-outline-gray-1">
-                  <td class="py-2 px-3">{{ formatDate(row.datum) }}</td>
-                  <td class="py-2 px-3 max-w-xs truncate">{{ row.buchungstext }}</td>
-                  <td class="py-2 px-3 text-right font-medium" :class="row.kategorie === 'Eingang' ? 'text-ink-green-3' : 'text-ink-red-4'">
+                <tr
+                  v-for="(row, i) in allRows"
+                  :key="i"
+                  class="border-t border-outline-gray-1"
+                  :class="row.duplicate ? 'opacity-40 bg-surface-gray-1' : ''"
+                >
+                  <td class="py-1.5 px-3 whitespace-nowrap text-ink-gray-6">{{ formatDate(row.datum) }}</td>
+                  <td class="py-1.5 px-3 max-w-xs truncate text-ink-gray-7">{{ row.buchungstext }}</td>
+                  <td class="py-1.5 px-3 text-right font-medium whitespace-nowrap"
+                    :class="row.betrag >= 0 ? 'text-ink-green-3' : 'text-ink-red-4'">
                     {{ formatCurrency(row.betrag) }}
                   </td>
-                  <td class="py-2 px-3 text-center">
-                    <Badge :theme="row.kategorie === 'Eingang' ? 'green' : 'red'" variant="subtle" size="sm">
-                      {{ row.kategorie }}
-                    </Badge>
+                  <td class="py-1.5 px-3">
+                    <select
+                      v-if="!row.duplicate"
+                      v-model="row.budgetposten"
+                      class="border border-outline-gray-2 rounded px-2 py-0.5 text-xs bg-white w-full max-w-[140px]"
+                    >
+                      <option value="">— kein —</option>
+                      <option v-for="bp in budgetposten" :key="bp.name" :value="bp.name">{{ bp.kategorie }}</option>
+                    </select>
+                    <span v-else class="text-ink-gray-4">—</span>
+                  </td>
+                  <td class="py-1.5 px-3 text-center">
+                    <Badge v-if="row.duplicate" theme="gray" variant="subtle" size="sm">Duplikat</Badge>
+                    <Badge v-else theme="green" variant="subtle" size="sm">Neu</Badge>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p class="text-xs text-ink-gray-5 mb-4">Zeigt die ersten 5 Zeilen. Der vollständige Import folgt nach Bestätigung.</p>
 
           <div class="flex justify-end gap-3">
             <Button variant="outline" theme="gray" @click="reset">Abbrechen</Button>
-            <Button variant="solid" theme="gray" :loading="importing" @click="doImport">
-              <FeatherIcon name="download" class="w-4 h-4 mr-2" />
-              Jetzt importieren
+            <Button variant="solid" theme="gray" :loading="importing" :disabled="!newRows.length" @click="doImport">
+              <span class="flex items-center gap-2 whitespace-nowrap">
+                <FeatherIcon name="download" class="w-4 h-4" />
+                {{ newRows.length }} Buchungen importieren
+              </span>
             </Button>
           </div>
         </div>
 
-        <!-- Step 3: Result -->
-        <div v-if="result">
-          <div class="rounded-lg p-4 space-y-3" :class="result.errors?.length ? 'bg-surface-yellow-1 border border-outline-yellow-2' : 'bg-surface-green-1 border border-outline-green-2'">
+        <!-- Schritt 3: Ergebnis -->
+        <div v-if="step === 3 && result">
+          <div class="rounded-lg p-4 space-y-3"
+            :class="result.errors?.length ? 'bg-surface-yellow-1 border border-outline-yellow-2' : 'bg-surface-green-1 border border-outline-green-2'">
             <div class="flex items-center gap-3">
-              <FeatherIcon :name="result.errors?.length ? 'alert-triangle' : 'check-circle'" class="w-6 h-6" :class="result.errors?.length ? 'text-ink-yellow-3' : 'text-ink-green-3'" />
+              <FeatherIcon
+                :name="result.errors?.length ? 'alert-triangle' : 'check-circle'"
+                class="w-6 h-6"
+                :class="result.errors?.length ? 'text-ink-yellow-3' : 'text-ink-green-3'"
+              />
               <div>
                 <p class="font-semibold text-ink-gray-9">Import abgeschlossen</p>
                 <p class="text-sm text-ink-gray-6">
@@ -87,7 +119,7 @@
             </ul>
           </div>
           <div class="flex justify-end gap-3 mt-4">
-            <Button variant="outline" theme="gray" @click="reset">Weiteren Import</Button>
+            <Button variant="outline" theme="gray" @click="reset">Weiterer Import</Button>
             <Button variant="solid" theme="gray" @click="done">Fertig</Button>
           </div>
         </div>
@@ -98,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { useApi } from '../composables/useApi'
 
@@ -109,22 +141,31 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'imported'])
 
-const { call } = useApi()
+const { call, list } = useApi()
 
 const fileInput = ref(null)
 const fileError = ref(null)
-const previewRows = ref([])
+const step = ref(1)
+const allRows = ref([])
 const detectedFormat = ref(null)
 const importing = ref(false)
+const loading = ref(false)
 const result = ref(null)
-let csvContent = null
+const budgetposten = ref([])
+
+const newRows = computed(() => allRows.value.filter(r => !r.duplicate))
+const dupRows = computed(() => allRows.value.filter(r => r.duplicate))
+
+onMounted(async () => {
+  budgetposten.value = await list('Budgetposten', { fields: ['name', 'kategorie'], limit: 50 }) || []
+})
 
 function reset() {
-  previewRows.value = []
+  step.value = 1
+  allRows.value = []
   detectedFormat.value = null
   result.value = null
   fileError.value = null
-  csvContent = null
   if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -146,35 +187,39 @@ function onFileSelected(e) {
 
 function processFile(file) {
   fileError.value = null
+  loading.value = true
   const reader = new FileReader()
   reader.onload = async (e) => {
-    csvContent = e.target.result
     try {
       const res = await call('ktesis.api.csv_import.preview_csv', {
         bankkonto: props.bankkonto,
-        csv_content: csvContent,
+        csv_content: e.target.result,
       })
-      previewRows.value = res.rows || []
+      allRows.value = res.rows || []
       detectedFormat.value = res.format
-      if (!previewRows.value.length) {
-        fileError.value = 'Keine gültigen Zeilen gefunden. Format prüfen.'
+      if (!allRows.value.length) {
+        fileError.value = 'Keine gültigen Zeilen gefunden.'
+      } else {
+        step.value = 2
       }
     } catch (err) {
       fileError.value = err.message || 'Fehler beim Lesen der Datei.'
+    } finally {
+      loading.value = false
     }
   }
   reader.readAsText(file)
 }
 
 async function doImport() {
-  if (!csvContent) return
   importing.value = true
   try {
-    const res = await call('ktesis.api.csv_import.import_bankbuchungen', {
+    const res = await call('ktesis.api.csv_import.import_bankbuchungen_rows', {
       bankkonto: props.bankkonto,
-      csv_content: csvContent,
+      rows: JSON.stringify(allRows.value),
     })
     result.value = res
+    step.value = 3
   } catch (err) {
     fileError.value = err.message || 'Importfehler.'
   } finally {
@@ -189,7 +234,6 @@ function formatCurrency(value) {
 
 function formatDate(val) {
   if (!val) return '—'
-  const d = new Date(val)
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  return new Date(val).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 </script>
