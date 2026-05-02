@@ -3,17 +3,36 @@
     <div class="flex items-center justify-between gap-4 mb-6">
       <h2 class="text-3xl font-semibold text-ink-gray-9">Budget</h2>
       <div class="flex items-center gap-3">
-        <select v-model="selectedMonat" class="border border-outline-gray-3 rounded-md px-3 py-2 text-sm bg-white">
-          <option v-for="m in monate" :key="m.value" :value="m.value">{{ m.label }}</option>
-        </select>
-        <select v-model="selectedJahr" class="border border-outline-gray-3 rounded-md px-3 py-2 text-sm bg-white">
-          <option v-for="j in jahre" :key="j" :value="j">{{ j }}</option>
-        </select>
+        <div class="flex items-center gap-2">
+          <Button
+            :variant="viewMode === 'monat' ? 'solid' : 'outline'"
+            theme="gray" size="sm"
+            @click="viewMode = 'monat'"
+          >Monat</Button>
+          <Button
+            :variant="viewMode === 'jahr' ? 'solid' : 'outline'"
+            theme="gray" size="sm"
+            @click="viewMode = 'jahr'"
+          >Jahr</Button>
+        </div>
+        <div v-if="viewMode === 'monat'" class="flex items-center gap-3">
+          <select v-model="selectedMonat" class="border border-outline-gray-3 rounded-md px-3 py-2 text-sm bg-white">
+            <option v-for="m in monate" :key="m.value" :value="m.value">{{ m.label }}</option>
+          </select>
+          <select v-model="selectedJahr" class="border border-outline-gray-3 rounded-md px-3 py-2 text-sm bg-white">
+            <option v-for="j in jahre" :key="j" :value="j">{{ j }}</option>
+          </select>
+        </div>
+        <div v-else class="flex items-center gap-3">
+          <select v-model="selectedJahr" class="border border-outline-gray-3 rounded-md px-3 py-2 text-sm bg-white">
+            <option v-for="j in jahre" :key="j" :value="j">{{ j }}</option>
+          </select>
+        </div>
       </div>
     </div>
 
     <!-- Monatsübersicht -->
-    <div v-if="uebersicht" class="grid grid-cols-3 gap-4 mb-8">
+    <div v-if="viewMode === 'monat' && uebersicht" class="grid grid-cols-3 gap-4 mb-8">
       <div class="bg-surface-green-1 border border-outline-green-2 rounded-lg p-4 text-center">
         <div class="text-sm text-ink-gray-5 mb-1">Einnahmen</div>
         <div class="text-2xl font-bold text-ink-green-3">{{ formatCurrency(uebersicht.einnahmen) }}</div>
@@ -28,76 +47,133 @@
       </div>
     </div>
 
-    <!-- Budget-Kategorien -->
-    <div class="bg-white border border-outline-gray-2 rounded-lg overflow-hidden mb-8">
-      <div class="px-4 py-3 border-b border-outline-gray-1 flex items-center justify-between">
-        <h3 class="font-medium text-ink-gray-8">Soll-Ist-Vergleich</h3>
-        <Button variant="outline" theme="gray" size="md" @click="showBudgetForm = !showBudgetForm">
-          <span class="flex items-center gap-2 whitespace-nowrap">
-            <FeatherIcon name="settings" class="w-4 h-4" />
-            Budget bearbeiten
-          </span>
-        </Button>
-      </div>
-      <div class="divide-y divide-outline-gray-1">
-        <div v-for="item in kategorien" :key="item.kategorie" class="px-4 py-3 cursor-pointer hover:bg-surface-gray-1 transition-colors" @click="toggleKat(item.kategorie)">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-ink-gray-8">{{ item.kategorie }}</span>
-            <div class="text-sm">
-              <span :class="item.ueberschritten ? 'text-ink-red-4 font-semibold' : 'text-ink-gray-6'">
-                {{ formatCurrency(item.ist) }}
-              </span>
-              <span class="text-ink-gray-4 mx-1">/</span>
-              <span class="text-ink-gray-5">{{ item.budget > 0 ? formatCurrency(item.budget) : '—' }}</span>
+    <template v-if="viewMode === 'monat'">
+      <!-- Budget-Kategorien -->
+      <div class="bg-white border border-outline-gray-2 rounded-lg overflow-hidden mb-8">
+        <div class="px-4 py-3 border-b border-outline-gray-1 flex items-center justify-between">
+          <h3 class="font-medium text-ink-gray-8">Soll-Ist-Vergleich</h3>
+          <Button variant="outline" theme="gray" size="md" @click="showBudgetForm = !showBudgetForm">
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <FeatherIcon name="settings" class="w-4 h-4" />
+              Budget bearbeiten
+            </span>
+          </Button>
+        </div>
+        <div class="divide-y divide-outline-gray-1">
+          <div v-for="item in kategorien" :key="item.kategorie" class="px-4 py-3 cursor-pointer hover:bg-surface-gray-1 transition-colors" @click="toggleKat(item.kategorie)">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium text-ink-gray-8">{{ item.kategorie }}</span>
+              <div class="text-sm">
+                <span :class="item.ueberschritten ? 'text-ink-red-4 font-semibold' : 'text-ink-gray-6'">
+                  {{ formatCurrency(item.ist) }}
+                </span>
+                <span class="text-ink-gray-4 mx-1">/</span>
+                <span class="text-ink-gray-5">{{ item.budget > 0 ? formatCurrency(item.budget) : '—' }}</span>
+              </div>
             </div>
-          </div>
-          <div v-if="item.budget > 0" class="h-2 bg-surface-gray-2 rounded-full overflow-hidden">
-            <div
-              class="h-full rounded-full transition-all"
-              :class="item.ueberschritten ? 'bg-ink-red-4' : 'bg-ink-green-3'"
-              :style="{ width: Math.min((item.ist / item.budget) * 100, 100) + '%' }"
-            />
-          </div>
-          <div v-else class="text-xs text-ink-gray-4 mt-1">Kein Budget definiert</div>
-          <!-- Aufklappbare Buchungsliste -->
-          <div v-if="expandedKat === item.kategorie && buchungenByKat[item.kategorie]" class="mt-2 space-y-1">
-            <div v-if="!buchungenByKat[item.kategorie].length" class="text-xs text-ink-gray-4 pl-1">Keine Buchungen in diesem Monat</div>
-            <div
-              v-for="b in buchungenByKat[item.kategorie]"
-              :key="b.name"
-              class="flex items-center justify-between text-xs px-2 py-1 rounded bg-surface-gray-1"
-            >
-              <span class="text-ink-gray-5 shrink-0 mr-2">{{ formatDate(b.datum) }}</span>
-              <span class="text-ink-gray-7 truncate flex-1">{{ b.buchungstext }}</span>
-              <span class="text-ink-red-4 font-medium ml-2 shrink-0">{{ formatCurrency(b.betrag) }}</span>
+            <div v-if="item.budget > 0" class="h-2 bg-surface-gray-2 rounded-full overflow-hidden">
+              <div
+                class="h-full rounded-full transition-all"
+                :class="item.ueberschritten ? 'bg-ink-red-4' : 'bg-ink-green-3'"
+                :style="{ width: Math.min((item.ist / item.budget) * 100, 100) + '%' }"
+              />
+            </div>
+            <div v-else class="text-xs text-ink-gray-4 mt-1">Kein Budget definiert</div>
+            <!-- Aufklappbare Buchungsliste -->
+            <div v-if="expandedKat === item.kategorie && buchungenByKat[item.kategorie]" class="mt-2 space-y-1">
+              <div v-if="!buchungenByKat[item.kategorie].length" class="text-xs text-ink-gray-4 pl-1">Keine Buchungen in diesem Monat</div>
+              <div
+                v-for="b in buchungenByKat[item.kategorie]"
+                :key="b.name"
+                class="flex items-center justify-between text-xs px-2 py-1 rounded bg-surface-gray-1"
+              >
+                <span class="text-ink-gray-5 shrink-0 mr-2">{{ formatDate(b.datum) }}</span>
+                <span class="text-ink-gray-7 truncate flex-1">{{ b.buchungstext }}</span>
+                <span class="text-ink-red-4 font-medium ml-2 shrink-0">{{ formatCurrency(b.betrag) }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Budget-Bearbeitung -->
-    <div v-if="showBudgetForm" class="bg-white border border-outline-gray-2 rounded-lg p-5">
-      <h3 class="font-medium text-ink-gray-8 mb-4">Budget-Posten bearbeiten</h3>
-      <div v-if="loadingBudgets" class="text-center py-4 text-ink-gray-4">Lade...</div>
-      <div v-else class="space-y-3">
-        <div v-for="kat in alleKategorien" :key="kat" class="flex items-center gap-4">
-          <span class="w-32 text-sm text-ink-gray-7 shrink-0">{{ kat }}</span>
-          <input
-            type="number"
-            min="0"
-            step="10"
-            :value="budgetForm[kat] || ''"
-            @input="budgetForm[kat] = parseFloat($event.target.value) || 0"
-            placeholder="0,00"
-            class="border border-outline-gray-3 rounded-md px-3 py-1.5 text-sm w-36"
-          />
-          <span class="text-xs text-ink-gray-4">€/Monat</span>
+      <!-- Budget-Bearbeitung -->
+      <div v-if="showBudgetForm" class="bg-white border border-outline-gray-2 rounded-lg p-5">
+        <h3 class="font-medium text-ink-gray-8 mb-4">Budget-Posten bearbeiten</h3>
+        <div v-if="loadingBudgets" class="text-center py-4 text-ink-gray-4">Lade...</div>
+        <div v-else class="space-y-3">
+          <div v-for="kat in alleKategorien" :key="kat" class="flex items-center gap-4">
+            <span class="w-32 text-sm text-ink-gray-7 shrink-0">{{ kat }}</span>
+            <input
+              type="number"
+              min="0"
+              step="10"
+              :value="budgetForm[kat] || ''"
+              @input="budgetForm[kat] = parseFloat($event.target.value) || 0"
+              placeholder="0,00"
+              class="border border-outline-gray-3 rounded-md px-3 py-1.5 text-sm w-36"
+            />
+            <span class="text-xs text-ink-gray-4">€/Monat</span>
+          </div>
+          <div class="flex justify-end gap-3 pt-3">
+            <Button variant="outline" theme="gray" @click="showBudgetForm = false">Abbrechen</Button>
+            <Button variant="solid" theme="gray" :loading="savingBudget" @click="saveBudgets">Speichern</Button>
+          </div>
         </div>
-        <div class="flex justify-end gap-3 pt-3">
-          <Button variant="outline" theme="gray" @click="showBudgetForm = false">Abbrechen</Button>
-          <Button variant="solid" theme="gray" :loading="savingBudget" @click="saveBudgets">Speichern</Button>
-        </div>
+      </div>
+    </template>
+
+    <!-- Jahresansicht -->
+    <div v-if="viewMode === 'jahr'" class="bg-white border border-outline-gray-2 rounded-lg overflow-hidden mb-8">
+      <div class="px-4 py-3 border-b border-outline-gray-1">
+        <h3 class="font-medium text-ink-gray-8">Jahresübersicht {{ selectedJahr }}</h3>
+      </div>
+      <div v-if="!jahresData.length" class="text-center py-8 text-ink-gray-4">Lade...</div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead class="bg-surface-gray-1">
+            <tr>
+              <th class="text-left py-2 px-3 font-medium text-ink-gray-5 sticky left-0 bg-surface-gray-1">Kategorie</th>
+              <th v-for="m in jahresData" :key="m.monat" class="text-right py-2 px-3 font-medium text-ink-gray-5 whitespace-nowrap">
+                {{ ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][m.monat-1] }}
+              </th>
+              <th class="text-right py-2 px-3 font-medium text-ink-gray-8 whitespace-nowrap">Gesamt</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="kat in ['Wohnen','Mobilitaet','Versicherung','Lebensmittel','Freizeit','Einkommen','Sonstiges']"
+              :key="kat"
+              class="border-t border-outline-gray-1 hover:bg-surface-gray-1"
+            >
+              <td class="py-2 px-3 font-medium text-ink-gray-7 sticky left-0 bg-white">{{ kat }}</td>
+              <td
+                v-for="m in jahresData"
+                :key="m.monat"
+                class="py-2 px-3 text-right"
+                :class="(m.kategorien.find(k => k.kategorie === kat)?.ueberschritten) ? 'text-ink-red-4 font-medium' : 'text-ink-gray-6'"
+              >
+                {{ formatCurrency(m.kategorien.find(k => k.kategorie === kat)?.ist || 0) }}
+              </td>
+              <td class="py-2 px-3 text-right font-semibold text-ink-gray-8">
+                {{ formatCurrency(jahresData.reduce((sum, m) => sum + (m.kategorien.find(k => k.kategorie === kat)?.ist || 0), 0)) }}
+              </td>
+            </tr>
+            <!-- Gesamt-Zeile -->
+            <tr class="border-t-2 border-outline-gray-3 bg-surface-gray-1 font-semibold">
+              <td class="py-2 px-3 text-ink-gray-8 sticky left-0 bg-surface-gray-1">Gesamt</td>
+              <td
+                v-for="m in jahresData"
+                :key="m.monat"
+                class="py-2 px-3 text-right text-ink-gray-8"
+              >
+                {{ formatCurrency(m.kategorien.reduce((sum, k) => sum + (k.ist || 0), 0)) }}
+              </td>
+              <td class="py-2 px-3 text-right text-ink-gray-9">
+                {{ formatCurrency(jahresData.reduce((sum, m) => sum + m.kategorien.reduce((s, k) => s + (k.ist || 0), 0), 0)) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -126,6 +202,9 @@ const existingBudgets = ref([])
 const expandedKat = ref(null)
 const buchungenByKat = ref({})
 
+const viewMode = ref('monat')
+const jahresData = ref([])
+
 const monate = [
   { value: 1, label: 'Januar' }, { value: 2, label: 'Februar' },
   { value: 3, label: 'März' }, { value: 4, label: 'April' },
@@ -147,6 +226,18 @@ async function loadData() {
   ])
   kategorien.value = budgetRes.kategorien || []
   uebersicht.value = uebRes
+}
+
+async function loadJahresData() {
+  const monate = []
+  for (let m = 1; m <= 12; m++) {
+    const res = await call('ktesis.api.dashboard.get_budget_vs_ist', {
+      monat: m,
+      jahr: selectedJahr.value,
+    })
+    monate.push({ monat: m, kategorien: res.kategorien || [] })
+  }
+  jahresData.value = monate
 }
 
 async function loadBudgetForm() {
@@ -222,6 +313,13 @@ function formatCurrency(value) {
 
 watch([selectedMonat, selectedJahr], loadData)
 watch(showBudgetForm, (v) => { if (v) loadBudgetForm() })
+
+watch(viewMode, (v) => {
+  if (v === 'jahr') loadJahresData()
+})
+watch(selectedJahr, () => {
+  if (viewMode.value === 'jahr') loadJahresData()
+})
 
 onMounted(loadData)
 </script>
