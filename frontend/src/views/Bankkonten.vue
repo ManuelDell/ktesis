@@ -339,7 +339,7 @@ function onImported() {
 async function autoAssignBudgetposten() {
   autoAssigning.value = true
   try {
-    await call('ktesis.api.csv_import.auto_assign_budgetposten', { bankkonto: selectedName.value })
+    await call('ktesis.api.ai_assign.ai_assign_budgetposten', { bankkonto: selectedName.value })
     await loadBuchungen()
   } finally {
     autoAssigning.value = false

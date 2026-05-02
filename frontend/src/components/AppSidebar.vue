@@ -29,6 +29,7 @@
      <NavItem href="#/darlehen" icon="dollar-sign" label="Darlehen" :active="page === 'Darlehen'" :collapsed="collapsed" />
     <NavItem href="#/bankkonten" icon="credit-card" label="Bankkonten" :active="page === 'Bankkonten'" :collapsed="collapsed" />
     <NavItem href="#/budget" icon="bar-chart-2" label="Budget" :active="page === 'Budget'" :collapsed="collapsed" />
+    <NavItem href="#/einstellungen" icon="settings" label="Einstellungen" :active="page === 'Einstellungen'" :collapsed="collapsed" />
   </nav>
 
    <!-- Footer -->
@@ -99,6 +100,7 @@ truck: 'M1 3h15v13H1z M16 8h4l3 3v5h-2 M5 19a2 2 0 1 0 4 0 2 2 0 0 0-4 0 M15 19a
 'dollar-sign': 'M12 1v22 M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
 'credit-card': 'M1 10h22 M1 6a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6z M1 14h22',
     'bar-chart-2': 'M18 20V10 M12 20V4 M6 20v-6',
+    settings: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z',
   }
   
   const NavItem = {

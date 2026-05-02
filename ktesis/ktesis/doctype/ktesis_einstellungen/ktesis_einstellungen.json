@@ -1,0 +1,50 @@
+{
+ "actions": [],
+ "creation": "2026-05-02 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["ki_aktiv", "ki_anbieter", "ki_api_url", "ki_api_key", "ki_modell"],
+ "fields": [
+  {
+   "fieldname": "ki_aktiv",
+   "fieldtype": "Check",
+   "label": "KI-Kategorisierung aktivieren"
+  },
+  {
+   "fieldname": "ki_anbieter",
+   "fieldtype": "Select",
+   "label": "Anbieter",
+   "options": "opencode\nopenai\nopenrouter",
+   "depends_on": "ki_aktiv"
+  },
+  {
+   "fieldname": "ki_api_url",
+   "fieldtype": "Data",
+   "label": "API URL",
+   "depends_on": "ki_aktiv"
+  },
+  {
+   "fieldname": "ki_api_key",
+   "fieldtype": "Password",
+   "label": "API Key",
+   "depends_on": "ki_aktiv"
+  },
+  {
+   "fieldname": "ki_modell",
+   "fieldtype": "Data",
+   "label": "Modell",
+   "depends_on": "ki_aktiv"
+  }
+ ],
+ "is_single": 1,
+ "links": [],
+ "modified": "2026-05-02 00:00:00",
+ "modified_by": "Administrator",
+ "module": "Ktesis",
+ "name": "Ktesis Einstellungen",
+ "owner": "Administrator",
+ "permissions": [{"role": "System Manager", "read": 1, "write": 1}],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 0
+}
