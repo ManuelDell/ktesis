@@ -39,7 +39,13 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           <div class="space-y-4">
             <FormControl v-model="form.bezeichnung" type="text" label="Bezeichnung" required />
-            <FormControl v-model="form.wohnung" type="text" label="Wohnung" />
+            <div>
+            <label class="block text-xs text-ink-gray-6 mb-1">Referenz-Objekt (Wohnung)</label>
+            <select v-model="form.wohnung" class="w-full border border-outline-gray-2 rounded px-3 py-2 text-sm bg-white">
+              <option value="">— keine —</option>
+              <option v-for="w in wohnungList" :key="w.name" :value="w.name">{{ w.bezeichnung || w.name }}</option>
+            </select>
+          </div>
             <FormControl v-model="form.darlehensgeber" type="text" label="Darlehensgeber" />
             <FormControl v-model="form.darlehensnummer" type="text" label="Darlehensnummer" />
             <FormControl v-model.number="form.darlehensbetrag" type="number" label="Darlehensbetrag" />
@@ -71,8 +77,10 @@
           >
             <template #default="{ openFileSelector, uploading, progress }">
               <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md">
-                <FeatherIcon name="upload" class="w-4 h-4 mr-2" />
-                {{ uploading ? `Upload ${progress}%` : 'Datei hochladen' }}
+                <span class="flex items-center gap-2 whitespace-nowrap">
+                  <FeatherIcon name="upload" class="w-4 h-4" />
+                  {{ uploading ? `Upload ${progress}%` : 'Datei hochladen' }}
+                </span>
               </Button>
             </template>
           </FileUploader>
@@ -191,7 +199,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 
-const { get, create, update, call } = useApi()
+const { get, create, update, call, list } = useApi()
 
 const isNew = computed(() => !props.name)
 const loading = ref(false)
@@ -204,6 +212,7 @@ const tilgungsplan = ref([])
 const tilgungsplanSummary = ref(null)
 const tilgungsplanLoading = ref(false)
 const tilgungsplanError = ref(null)
+const wohnungList = ref([])
 
 const tabs = [
   { key: 'stammdaten', label: 'Stammdaten' },
@@ -231,6 +240,7 @@ const form = reactive({
 })
 
 onMounted(async () => {
+  wohnungList.value = await list('Wohnung', { fields: ['name', 'bezeichnung'], limit: 50 }) || []
   if (props.name) {
     loading.value = true
     try {

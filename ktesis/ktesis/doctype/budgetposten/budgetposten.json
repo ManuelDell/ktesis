@@ -3,13 +3,25 @@
  "autoname": "format:BUD-{####}",
  "doctype": "DocType",
  "engine": "InnoDB",
- "field_order": ["kategorie", "betrag_monatlich", "notiz"],
+ "field_order": [
+  "kategorie",
+  "ki_beschreibung",
+  "betrag_monatlich",
+  "notiz"
+ ],
  "fields": [
   {
    "fieldname": "kategorie",
    "fieldtype": "Data",
    "label": "Kategorie",
    "reqd": 1
+  },
+  {
+   "fieldname": "ki_beschreibung",
+   "label": "KI-Beschreibung",
+   "fieldtype": "Small Text",
+   "insert_after": "kategorie",
+   "description": "Kontext für KI-Kategorisierung (z.B. Monatliche Kaltmiete, Wohnungsmiete)"
   },
   {
    "fieldname": "betrag_monatlich",
@@ -29,9 +41,16 @@
  "naming_rule": "Expression",
  "permissions": [
   {
-   "create": 1, "delete": 1, "email": 1, "export": 1,
-   "print": 1, "read": 1, "report": 1,
-   "role": "System Manager", "share": 1, "write": 1
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
   }
  ],
  "sort_field": "kategorie",

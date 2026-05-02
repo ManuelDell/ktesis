@@ -102,20 +102,44 @@
         <div v-else-if="buchungen.length === 0" class="text-center py-8 text-ink-gray-4">
           Keine Buchungen vorhanden.
         </div>
+        <!-- Bulk-Aktionen -->
+        <div v-if="selectedBuchungen.size > 0" class="flex items-center gap-3 mb-3 px-1">
+          <span class="text-sm text-ink-gray-6">{{ selectedBuchungen.size }} ausgewählt</span>
+          <Button variant="outline" theme="red" size="sm" :loading="bulkDeleting" @click="confirmBulkDelete">
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <FeatherIcon name="trash-2" class="w-4 h-4" />
+              Löschen
+            </span>
+          </Button>
+          <Button variant="outline" theme="gray" size="sm" @click="openBulkKontoWechsel">
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <FeatherIcon name="repeat" class="w-4 h-4" />
+              Konto wechseln
+            </span>
+          </Button>
+          <button @click="selectedBuchungen = new Set()" class="text-xs text-ink-gray-4 hover:text-ink-gray-7">Auswahl aufheben</button>
+        </div>
         <div v-else class="bg-white border border-outline-gray-2 rounded-lg shadow-sm overflow-hidden">
           <table class="w-full text-sm border-collapse">
             <thead>
               <tr class="border-b border-outline-gray-2">
+                <th class="py-3 px-3 w-8">
+                  <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="rounded" />
+                </th>
                 <th class="text-left py-3 px-4 font-medium text-ink-gray-5">Datum</th>
                 <th class="text-left py-3 px-4 font-medium text-ink-gray-5">Konto</th>
                 <th class="text-left py-3 px-4 font-medium text-ink-gray-5">Buchungstext</th>
                 <th class="text-right py-3 px-4 font-medium text-ink-gray-5">Betrag</th>
                 <th class="text-center py-3 px-4 font-medium text-ink-gray-5">Typ</th>
                 <th class="text-left py-3 px-4 font-medium text-ink-gray-5">Budgettopf</th>
+                <th class="text-center py-3 px-4 font-medium text-ink-gray-5">Aktionen</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="b in buchungen" :key="b.name" class="border-b border-outline-gray-1 hover:bg-surface-gray-2">
+                <td class="py-2 px-3">
+                  <input type="checkbox" :checked="selectedBuchungen.has(b.name)" @change="toggleSelect(b.name)" class="rounded" />
+                </td>
                 <td class="py-3 px-4 text-sm">{{ formatDate(b.datum) }}</td>
                 <td class="py-3 px-4 text-sm">{{ b.bankkonto_bezeichnung || b.bankkonto }}</td>
                 <td class="py-3 px-4 text-sm">{{ b.buchungstext }}</td>
@@ -136,6 +160,24 @@
                     <option value="">— kein —</option>
                     <option v-for="bp in budgetpostenList" :key="bp.name" :value="bp.name">{{ bp.kategorie }}</option>
                   </select>
+                </td>
+                <td class="py-2 px-4 text-center">
+                  <div class="flex items-center gap-1 justify-center">
+                    <button
+                      @click.stop="openKontoWechsel(b)"
+                      class="p-1.5 rounded text-ink-gray-4 hover:text-ink-blue-4 hover:bg-surface-blue-1 transition-all"
+                      title="Konto wechseln"
+                    >
+                      <FeatherIcon name="repeat" class="w-3 h-3" />
+                    </button>
+                    <button
+                      @click.stop="confirmDeleteBuchung(b)"
+                      class="p-1.5 rounded text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all"
+                      title="Buchung löschen"
+                    >
+                      <FeatherIcon name="trash-2" class="w-3 h-3" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -196,7 +238,81 @@
         </p>
       </template>
     </Dialog>
-    <!-- CSV Import Dialog -->
+
+    <!-- Buchung löschen Dialog -->
+    <Dialog
+      :options="{ title: 'Buchung löschen', size: 'sm', actions: [
+        { label: 'Abbrechen', variant: 'outline', theme: 'gray', onClick: () => showDeleteBuchungDialog = false },
+        { label: 'Löschen', variant: 'solid', theme: 'red', onClick: doDeleteBuchung }
+      ]}"
+      v-model="showDeleteBuchungDialog"
+    >
+      <template #body>
+        <div class="px-5 py-4">
+          <p class="text-sm text-ink-gray-6">
+            Buchung <strong>{{ buchungToDelete?.buchungstext }}</strong> ({{ formatCurrency(buchungToDelete?.betrag) }}) wirklich löschen?
+          </p>
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- Konto wechseln Dialog -->
+    <Dialog
+      :options="{ title: 'Konto wechseln', size: 'sm', actions: [
+        { label: 'Abbrechen', variant: 'outline', theme: 'gray', onClick: () => showKontoWechselDialog = false },
+        { label: 'Speichern', variant: 'solid', theme: 'gray', onClick: doKontoWechsel }
+      ]}"
+      v-model="showKontoWechselDialog"
+    >
+      <template #body>
+        <div class="px-5 py-4 space-y-3">
+          <p class="text-sm text-ink-gray-6">Buchung: <strong>{{ buchungToMove?.buchungstext }}</strong></p>
+          <div>
+            <label class="block text-xs text-ink-gray-6 mb-1">Zielkonto</label>
+            <select v-model="kontoWechselTarget" class="w-full border border-outline-gray-2 rounded px-3 py-2 text-sm bg-white">
+              <option value="">— Konto wählen —</option>
+              <option v-for="k in listData" :key="k.name" :value="k.name">{{ k.bezeichnung || k.name }}</option>
+            </select>
+          </div>
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- Bulk Löschen Dialog -->
+    <Dialog
+      :options="{ title: 'Buchungen löschen', size: 'sm', actions: [
+        { label: 'Abbrechen', variant: 'outline', theme: 'gray', onClick: () => showBulkDeleteDialog = false },
+        { label: selectedBuchungen.size + ' Buchungen löschen', variant: 'solid', theme: 'red', onClick: doBulkDelete }
+      ]}"
+      v-model="showBulkDeleteDialog"
+    >
+      <template #body>
+        <div class="px-5 py-4">
+          <p class="text-sm text-ink-gray-6">{{ selectedBuchungen.size }} Buchungen wirklich unwiderruflich löschen?</p>
+        </div>
+      </template>
+    </Dialog>
+
+    <!-- Bulk Konto wechseln Dialog -->
+    <Dialog
+      :options="{ title: 'Konto wechseln', size: 'sm', actions: [
+        { label: 'Abbrechen', variant: 'outline', theme: 'gray', onClick: () => showBulkKontoDialog = false },
+        { label: 'Speichern', variant: 'solid', theme: 'gray', onClick: doBulkKontoWechsel }
+      ]}"
+      v-model="showBulkKontoDialog"
+    >
+      <template #body>
+        <div class="px-5 py-4">
+          <p class="text-sm text-ink-gray-6 mb-3">{{ selectedBuchungen.size }} Buchungen umbuchen auf:</p>
+          <select v-model="bulkKontoTarget" class="w-full border border-outline-gray-2 rounded px-3 py-2 text-sm bg-white">
+            <option value="">— Konto wählen —</option>
+            <option v-for="k in listData" :key="k.name" :value="k.name">{{ k.bezeichnung || k.name }}</option>
+          </select>
+        </div>
+      </template>
+    </Dialog>
+
+        <!-- CSV Import Dialog -->
     <CsvImportDialog
       v-if="showImportDialog"
       v-model="showImportDialog"
@@ -232,6 +348,110 @@ const buchungen = ref([])
 const buchungenLoading = ref(false)
 const budgetpostenList = ref([])
 const autoAssigning = ref(false)
+const showDeleteBuchungDialog = ref(false)
+const buchungToDelete = ref(null)
+const showKontoWechselDialog = ref(false)
+const buchungToMove = ref(null)
+const kontoWechselTarget = ref('')
+const selectedBuchungen = ref(new Set())
+const bulkDeleting = ref(false)
+const showBulkDeleteDialog = ref(false)
+const showBulkKontoDialog = ref(false)
+const bulkKontoTarget = ref('')
+
+const allSelected = computed(() =>
+  buchungen.value.length > 0 && buchungen.value.every(b => selectedBuchungen.value.has(b.name))
+)
+
+function toggleSelect(name) {
+  const s = new Set(selectedBuchungen.value)
+  if (s.has(name)) s.delete(name)
+  else s.add(name)
+  selectedBuchungen.value = s
+}
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selectedBuchungen.value = new Set()
+  } else {
+    selectedBuchungen.value = new Set(buchungen.value.map(b => b.name))
+  }
+}
+
+function confirmBulkDelete() {
+  showBulkDeleteDialog.value = true
+}
+
+async function doBulkDelete() {
+  bulkDeleting.value = true
+  try {
+    for (const name of selectedBuchungen.value) {
+      await delete_('Bankbuchung', name)
+    }
+    selectedBuchungen.value = new Set()
+    showBulkDeleteDialog.value = false
+    await loadBuchungen()
+  } catch (e) {
+    alert('Fehler: ' + (e.message || 'Unbekannter Fehler'))
+  } finally {
+    bulkDeleting.value = false
+  }
+}
+
+function openBulkKontoWechsel() {
+  bulkKontoTarget.value = ''
+  showBulkKontoDialog.value = true
+}
+
+async function doBulkKontoWechsel() {
+  if (!bulkKontoTarget.value) return
+  try {
+    for (const name of selectedBuchungen.value) {
+      await update('Bankbuchung', name, { bankkonto: bulkKontoTarget.value })
+    }
+    selectedBuchungen.value = new Set()
+    showBulkKontoDialog.value = false
+    await loadBuchungen()
+  } catch (e) {
+    alert('Fehler: ' + (e.message || 'Unbekannter Fehler'))
+  }
+}
+
+function confirmDeleteBuchung(b) {
+  buchungToDelete.value = b
+  showDeleteBuchungDialog.value = true
+}
+
+async function doDeleteBuchung() {
+  if (!buchungToDelete.value) return
+  try {
+    await delete_('Bankbuchung', buchungToDelete.value.name)
+    showDeleteBuchungDialog.value = false
+    buchungToDelete.value = null
+    loadBuchungen()
+  } catch (e) {
+    alert('Fehler: ' + (e.message || 'Unbekannter Fehler'))
+  }
+}
+
+function openKontoWechsel(b) {
+  buchungToMove.value = b
+  kontoWechselTarget.value = b.bankkonto || ''
+  showKontoWechselDialog.value = true
+}
+
+async function doKontoWechsel() {
+  if (!buchungToMove.value || !kontoWechselTarget.value) return
+  try {
+    await update('Bankbuchung', buchungToMove.value.name, { bankkonto: kontoWechselTarget.value })
+    showKontoWechselDialog.value = false
+    buchungToMove.value = null
+    kontoWechselTarget.value = ''
+    loadBuchungen()
+  } catch (e) {
+    alert('Fehler: ' + (e.message || 'Unbekannter Fehler'))
+  }
+}
 
 async function loadList() {
   loading.value = true
@@ -250,6 +470,7 @@ async function loadBuchungen() {
     buchungen.value = res || []
   } catch (e) {
     buchungen.value = []
+    selectedBuchungen.value = new Set()
   } finally {
     buchungenLoading.value = false
   }

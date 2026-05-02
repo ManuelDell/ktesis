@@ -50,21 +50,49 @@
       <!-- Notizen (full width) -->
       <FormControl v-model="form.notizen" type="textarea" label="Notizen" />
 
-      <!-- Anhänge -->
-      <div v-if="!isNew" class="border-t border-outline-gray-2 pt-5">
-        <h4 class="text-sm font-medium text-ink-gray-7 mb-3">Anhänge</h4>
-        <FileUploader
-          :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, is_private: 1 }"
-          @success="onUploadSuccess"
-          fileTypes=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-        >
-          <template #default="{ openFileSelector, uploading, progress }">
-            <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md">
-              <FeatherIcon name="upload" class="w-4 h-4 mr-2" />
-              {{ uploading ? `Upload ${progress}%` : 'Datei hochladen' }}
-            </Button>
-          </template>
-        </FileUploader>
+      <!-- Dokumente -->
+      <div v-if="!isNew" class="border-t border-outline-gray-2 pt-5 space-y-4">
+        <h4 class="text-sm font-medium text-ink-gray-7">Dokumente</h4>
+
+        <!-- Fahrzeugschein -->
+        <div>
+          <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugschein (Zulassungsbescheinigung Teil I)</p>
+          <FileUploader
+            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, is_private: 1, folder: 'fahrzeugschein' }"
+            @success="onUploadSuccess"
+            fileTypes=".pdf,.jpg,.jpeg,.png"
+          >
+            <template #default="{ openFileSelector, uploading, progress }">
+              <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="sm">
+                <span class="flex items-center gap-2 whitespace-nowrap">
+                  <FeatherIcon name="upload" class="w-4 h-4" />
+                  {{ uploading ? `Upload ${progress}%` : 'Fahrzeugschein hochladen' }}
+                </span>
+              </Button>
+            </template>
+          </FileUploader>
+        </div>
+
+        <!-- Fahrzeugbrief -->
+        <div>
+          <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugbrief (Zulassungsbescheinigung Teil II)</p>
+          <FileUploader
+            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, is_private: 1, folder: 'fahrzeugbrief' }"
+            @success="onUploadSuccess"
+            fileTypes=".pdf,.jpg,.jpeg,.png"
+          >
+            <template #default="{ openFileSelector, uploading, progress }">
+              <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="sm">
+                <span class="flex items-center gap-2 whitespace-nowrap">
+                  <FeatherIcon name="upload" class="w-4 h-4" />
+                  {{ uploading ? `Upload ${progress}%` : 'Fahrzeugbrief hochladen' }}
+                </span>
+              </Button>
+            </template>
+          </FileUploader>
+        </div>
+
+        <!-- Alle Anhänge -->
         <AttachmentList ref="attachmentList" doctype="Fahrzeug" :docname="props.name" />
       </div>
 

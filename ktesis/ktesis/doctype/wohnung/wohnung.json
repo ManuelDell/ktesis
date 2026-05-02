@@ -16,13 +16,29 @@
   "wohnflaeche",
   "zimmer",
   "baujahr",
+  "nutzungstyp",
+  "wohnungstyp",
+  "status",
+  "section_eigentum",
   "kaufpreis",
   "kaufdatum",
   "kauf_wert",
   "aktueller_wert",
-  "wohnungstyp",
+  "section_gemietet",
+  "monatliche_miete",
+  "mietbudgetposten",
+  "nebenkosten_monatlich",
+  "nebenkostenbudgetposten",
+  "vermieter",
+  "mietbeginn",
+  "section_vermietet",
+  "mieteinnahme_monatlich",
+  "einnahmebudgetposten",
+  "nebenkosten_monatlich_verm",
+  "nebenkostenbudgetposten_verm",
+  "mieter",
+  "mietvertrag_beginn",
   "notizen",
-  "status",
   "abschreibungen"
  ],
  "fields": [
@@ -36,7 +52,7 @@
   {
    "fieldname": "strasse",
    "fieldtype": "Data",
-   "label": "Stra\u00dfe"
+   "label": "Straße"
   },
   {
    "fieldname": "hausnummer",
@@ -62,7 +78,7 @@
   {
    "fieldname": "wohnflaeche",
    "fieldtype": "Float",
-   "label": "Wohnfl\u00e4che (m\u00b2)"
+   "label": "Wohnfläche (m²)"
   },
   {
    "fieldname": "zimmer",
@@ -75,35 +91,18 @@
    "label": "Baujahr"
   },
   {
-   "fieldname": "kaufpreis",
-   "fieldtype": "Currency",
-   "label": "Kaufpreis"
-  },
-  {
-   "fieldname": "kaufdatum",
-   "fieldtype": "Date",
-   "label": "Kaufdatum"
-  },
-  {
-   "fieldname": "kauf_wert",
-   "fieldtype": "Currency",
-   "label": "Kauf-/Einstandswert"
-  },
-  {
-   "fieldname": "aktueller_wert",
-   "fieldtype": "Currency",
-   "label": "Gesch\u00e4tzter aktueller Wert"
+   "fieldname": "nutzungstyp",
+   "fieldtype": "Select",
+   "label": "Nutzungstyp",
+   "options": "\nEigentum\nGemietet\nVermietet",
+   "in_list_view": 1,
+   "description": "Eigentum = gehört mir, Gemietet = ich miete es, Vermietet = ich vermiete es"
   },
   {
    "fieldname": "wohnungstyp",
    "fieldtype": "Select",
-   "label": "Wohnungstyp",
-   "options": "Eigentumswohnung\nReihenhaus\nEinfamilienhaus\nMehrfamilienhaus\nGewerbe"
-  },
-  {
-   "fieldname": "notizen",
-   "fieldtype": "Text",
-   "label": "Notizen"
+   "label": "Gebäudetyp",
+   "options": "\nEigentumswohnung\nReihenhaus\nEinfamilienhaus\nMehrfamilienhaus\nGewerbe"
   },
   {
    "fieldname": "status",
@@ -112,6 +111,131 @@
    "label": "Status",
    "options": "Bewohnt\nVermietet\nLeerstehend\nVerkauft",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_eigentum",
+   "fieldtype": "Section Break",
+   "label": "Kaufdetails",
+   "depends_on": "eval:doc.nutzungstyp=='Eigentum' || !doc.nutzungstyp"
+  },
+  {
+   "fieldname": "kaufpreis",
+   "fieldtype": "Currency",
+   "label": "Kaufpreis",
+   "depends_on": "eval:doc.nutzungstyp=='Eigentum' || !doc.nutzungstyp"
+  },
+  {
+   "fieldname": "kaufdatum",
+   "fieldtype": "Date",
+   "label": "Kaufdatum",
+   "depends_on": "eval:doc.nutzungstyp=='Eigentum' || !doc.nutzungstyp"
+  },
+  {
+   "fieldname": "kauf_wert",
+   "fieldtype": "Currency",
+   "label": "Kauf-/Einstandswert",
+   "depends_on": "eval:doc.nutzungstyp=='Eigentum' || !doc.nutzungstyp"
+  },
+  {
+   "fieldname": "aktueller_wert",
+   "fieldtype": "Currency",
+   "label": "Geschätzter aktueller Wert",
+   "depends_on": "eval:doc.nutzungstyp=='Eigentum' || !doc.nutzungstyp"
+  },
+  {
+   "fieldname": "section_gemietet",
+   "fieldtype": "Section Break",
+   "label": "Mietdetails",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'"
+  },
+  {
+   "fieldname": "monatliche_miete",
+   "fieldtype": "Currency",
+   "label": "Monatliche Kaltmiete (€)",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'"
+  },
+  {
+   "fieldname": "mietbudgetposten",
+   "fieldtype": "Link",
+   "label": "Budget-Zuordnung Miete",
+   "options": "Budgetposten",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'",
+   "description": "Budgetposten für monatliche Mietzahlungen"
+  },
+  {
+   "fieldname": "nebenkosten_monatlich",
+   "fieldtype": "Currency",
+   "label": "Monatliche Nebenkosten (€)",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'"
+  },
+  {
+   "fieldname": "nebenkostenbudgetposten",
+   "fieldtype": "Link",
+   "label": "Budget-Zuordnung Nebenkosten",
+   "options": "Budgetposten",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'"
+  },
+  {
+   "fieldname": "vermieter",
+   "fieldtype": "Data",
+   "label": "Vermieter",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'"
+  },
+  {
+   "fieldname": "mietbeginn",
+   "fieldtype": "Date",
+   "label": "Mietbeginn",
+   "depends_on": "eval:doc.nutzungstyp=='Gemietet'"
+  },
+  {
+   "fieldname": "section_vermietet",
+   "fieldtype": "Section Break",
+   "label": "Vermietungsdetails",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'"
+  },
+  {
+   "fieldname": "mieteinnahme_monatlich",
+   "fieldtype": "Currency",
+   "label": "Monatliche Mieteinnahme (€)",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'"
+  },
+  {
+   "fieldname": "einnahmebudgetposten",
+   "fieldtype": "Link",
+   "label": "Budget-Zuordnung Einnahme",
+   "options": "Budgetposten",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'",
+   "description": "Budgetposten für Mieteinnahmen"
+  },
+  {
+   "fieldname": "nebenkosten_monatlich_verm",
+   "fieldtype": "Currency",
+   "label": "Monatliche Nebenkosten (€)",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'"
+  },
+  {
+   "fieldname": "nebenkostenbudgetposten_verm",
+   "fieldtype": "Link",
+   "label": "Budget-Zuordnung Nebenkosten",
+   "options": "Budgetposten",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'"
+  },
+  {
+   "fieldname": "mieter",
+   "fieldtype": "Data",
+   "label": "Mieter",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'"
+  },
+  {
+   "fieldname": "mietvertrag_beginn",
+   "fieldtype": "Date",
+   "label": "Mietvertragsbeginn",
+   "depends_on": "eval:doc.nutzungstyp=='Vermietet'"
+  },
+  {
+   "fieldname": "notizen",
+   "fieldtype": "Text",
+   "label": "Notizen"
   },
   {
    "fieldname": "abschreibungen",
@@ -123,7 +247,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-27 18:21:05.683938",
+ "modified": "2026-05-02 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Ktesis",
  "name": "Wohnung",

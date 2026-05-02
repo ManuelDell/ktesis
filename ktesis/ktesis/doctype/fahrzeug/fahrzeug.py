@@ -7,15 +7,8 @@ from datetime import datetime
 
 class Fahrzeug(Document):
     def validate(self):
-        self._validate_kennzeichen()
         self._validate_fin()
         self._validate_kilometerstand()
-
-    def _validate_kennzeichen(self):
-        if self.kennzeichen:
-            pattern = r'^[A-ZÄÖÜ]{1,3}-[A-Z]{1,2}-\d{1,4}[EH]?$'
-            if not re.match(pattern, self.kennzeichen.upper()):
-                frappe.throw(_("Ungültiges Kennzeichen-Format (Beispiel: B-AB-1234)"))
 
     def _validate_fin(self):
         if self.fin and len(self.fin) != 17:

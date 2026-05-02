@@ -132,7 +132,6 @@ def get_budget_vs_ist(monat: int = None, jahr: int = None) -> dict:
         SELECT budgetposten, SUM(ABS(betrag)) as gesamt
         FROM `tabBankbuchung`
         WHERE datum >= %s AND datum < %s
-          AND kategorie = 'Ausgang'
           AND budgetposten IS NOT NULL AND budgetposten != ''
         GROUP BY budgetposten
     """, (datum_von, datum_bis), as_dict=True)
@@ -143,7 +142,6 @@ def get_budget_vs_ist(monat: int = None, jahr: int = None) -> dict:
         SELECT buchungskategorie, SUM(ABS(betrag)) as gesamt
         FROM `tabBankbuchung`
         WHERE datum >= %s AND datum < %s
-          AND kategorie = 'Ausgang'
           AND (budgetposten IS NULL OR budgetposten = '')
           AND buchungskategorie IS NOT NULL AND buchungskategorie != ''
         GROUP BY buchungskategorie

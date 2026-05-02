@@ -78,7 +78,9 @@
                 :style="{ width: Math.min((item.ist / item.budget) * 100, 100) + '%' }"
               />
             </div>
-            <div v-else class="text-xs text-ink-gray-4 mt-1">Kein Budget definiert</div>
+            <div v-if="!item.budget" class="text-xs text-ink-gray-4 mt-1">
+              Kein Budget — {{ formatCurrency(item.ist) }} erfasst
+            </div>
             <!-- Aufklappbare Buchungsliste -->
             <div v-if="expandedKat === item.kategorie && buchungenByKat[item.kategorie]" class="mt-2 space-y-1">
               <div v-if="!buchungenByKat[item.kategorie].length" class="text-xs text-ink-gray-4 pl-1">Keine Buchungen in diesem Monat</div>
@@ -281,15 +283,12 @@ async function loadData() {
 }
 
 async function loadJahresData() {
-  const monate = []
-  for (let m = 1; m <= 12; m++) {
-    const res = await call('ktesis.api.dashboard.get_budget_vs_ist', {
-      monat: m,
-      jahr: selectedJahr.value,
-    })
-    monate.push({ monat: m, kategorien: res.kategorien || [] })
-  }
-  jahresData.value = monate
+  jahresData.value = []
+  const promises = Array.from({ length: 12 }, (_, i) =>
+    call('ktesis.api.dashboard.get_budget_vs_ist', { monat: i + 1, jahr: selectedJahr.value })
+      .then(res => ({ monat: i + 1, kategorien: res.kategorien || [] }))
+  )
+  jahresData.value = await Promise.all(promises)
 }
 
 async function loadBudgetForm() {

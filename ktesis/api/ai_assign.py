@@ -1,11 +1,15 @@
 from __future__ import annotations
+import re
 import json
+import difflib
+import urllib.request
+import urllib.error
 import frappe
 from frappe import _
+from frappe.utils import getdate, today
 
 
 def _get_settings() -> dict:
-    """Load KI settings from KtesisEinstellungen Single DocType."""
     try:
         d = frappe.db.get_singles_dict("Ktesis Einstellungen")
         aktiv = str(d.get("ki_aktiv") or "0") in ("1", "1.0", "true", "True")
@@ -20,42 +24,44 @@ def _get_settings() -> dict:
         return {"aktiv": False}
 
 
-def _classify_batch(texts: list[str], kategorien: list[str], settings: dict) -> list[str]:
-    """Send batch of texts to AI, return list of assigned categories."""
-    import urllib.request
+_IBAN_RE = re.compile(r'\b[A-Z]{2}\d{2}[A-Z0-9]{4,30}\b')
+_BIC_RE = re.compile(r'\b[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?\b')
+_REF_RE = re.compile(r'(EREF|MREF|KREF|SVWZ|CRED|DEBT|ABWA|ABWE)\+[^\s+]+', re.IGNORECASE)
+_DATE_RE = re.compile(r'\b\d{2}[.\-/]\d{2}[.\-/]\d{2,4}\b')
+_MULTI_SPACE = re.compile(r'\s{2,}')
 
-    base_url = settings["api_url"].rstrip("/")
-    api_key = settings["api_key"]
-    modell = settings["modell"]
 
-    kat_list = "\n".join(f"- {k}" for k in kategorien)
-    items = "\n".join(f'{i+1}. "{t}"' for i, t in enumerate(texts))
+def _preprocess_buchungstext(text: str) -> str:
+    if not text:
+        return ""
+    auftraggeber = ""
+    m = re.search(r'(Auftraggeber|Empfaenger|Zahlungsempfaenger)[:\s]+([^/\n]+)', text, re.IGNORECASE)
+    if m:
+        auftraggeber = m.group(2).strip()
+    verwendung = ""
+    m2 = re.search(r'(Verwendungszweck|SVWZ\+)([^\n/]+)', text, re.IGNORECASE)
+    if m2:
+        verwendung = m2.group(2).strip()
+    cleaned = _IBAN_RE.sub('', text)
+    cleaned = _BIC_RE.sub('', cleaned)
+    cleaned = _REF_RE.sub('', cleaned)
+    cleaned = _DATE_RE.sub('', cleaned)
+    cleaned = _MULTI_SPACE.sub(' ', cleaned).strip()
+    if auftraggeber or verwendung:
+        parts = [p for p in [auftraggeber, verwendung] if p]
+        return ' - '.join(parts)[:200]
+    return cleaned[:200]
 
-    system_prompt = (
-        "Du bist ein Finanz-Kategorisierer. "
-        "Ordne jeden Buchungstext einer der gegebenen Kategorien zu. "
-        "Antworte NUR mit einem JSON-Array der Kategorienamen, ein Eintrag pro Buchungstext. "
-        "Beispiel: [\"Lebensmittel\", \"Wohnen\", \"Sonstiges\"]"
-    )
 
-    user_prompt = (
-        f"Kategorien:\n{kat_list}\n\n"
-        f"Buchungstexte:\n{items}\n\n"
-        f"Antworte mit einem JSON-Array mit genau {len(texts)} Einträgen."
-    )
-
+def _call_api(url: str, api_key: str, modell: str, messages: list, max_tokens: int = 1024) -> str:
     payload = json.dumps({
         "model": modell,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": 0,
-        "max_tokens": 1024,
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": 0.1,
     }).encode("utf-8")
-
     req = urllib.request.Request(
-        f"{base_url}/chat/completions",
+        url,
         data=payload,
         headers={
             "Content-Type": "application/json",
@@ -64,100 +70,143 @@ def _classify_batch(texts: list[str], kategorien: list[str], settings: dict) -> 
         },
         method="POST",
     )
-
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read())
-        msg = data["choices"][0]["message"]
-        content = (msg.get("content") or msg.get("reasoning") or "").strip()
-        # Extract JSON array from response (may have markdown fences)
-        start = content.find("[")
-        end = content.rfind("]") + 1
-        if start >= 0 and end > start:
-            result = json.loads(content[start:end])
-            if isinstance(result, list) and len(result) == len(texts):
-                return [str(r) for r in result]
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")[:300]
+        frappe.throw(_(f"HTTP Error {e.code}: {e.reason} — {body}"))
     except Exception as e:
-        frappe.log_error(f"AI classify error: {e}", "ai_assign")
+        frappe.throw(_(f"KI-Verbindungsfehler: {e}"))
+    msg = data["choices"][0]["message"]
+    return (msg.get("content") or msg.get("reasoning") or "").strip()
 
-    return ["Sonstiges"] * len(texts)
+
+def _parse_mapping(content: str, n: int, kategorien: list) -> list | None:
+    json_match = re.search(r'\{[^{}]*\}', content, re.DOTALL)
+    if not json_match:
+        return None
+    try:
+        mapping = json.loads(json_match.group())
+    except json.JSONDecodeError:
+        return None
+    results = []
+    for i in range(n):
+        raw = mapping.get(str(i), "Sonstiges")
+        matches = difflib.get_close_matches(raw, kategorien, n=1, cutoff=0.6)
+        results.append(matches[0] if matches else (raw if raw in kategorien else "Sonstiges"))
+    return results
+
+
+def _classify_batch(texts: list, kategorien: list, settings: dict, beschreibungen: dict = None) -> list:
+    base_url = settings.get("api_url", "").rstrip("/")
+    api_key = settings.get("api_key", "")
+    modell = settings.get("modell", "kimi-k2.6")
+    url = f"{base_url}/chat/completions"
+
+    kat_lines = []
+    for k in kategorien:
+        desc = (beschreibungen or {}).get(k, "")
+        kat_lines.append(f"- {k}: {desc}" if desc else f"- {k}")
+    kat_text = "\n".join(kat_lines)
+
+    tx_entries = ",\n".join(f'  "{i}": "{t}"' for i, t in enumerate(texts))
+    tx_text = "{\n" + tx_entries + "\n}"
+
+    prompt = (
+        f"Du bist ein Finanz-Kategorisierungsassistent. Ordne jede Transaktion einer Budgetkategorie zu.\n\n"
+        f"KATEGORIEN:\n{kat_text}\n\n"
+        f"TRANSAKTIONEN (JSON mit Index als Key):\n{tx_text}\n\n"
+        f"Antworte NUR mit validem JSON: {{\"0\": \"Kategorie\", \"1\": \"Kategorie\", ...}}\n"
+        f"Nur Kategorienamen aus der obigen Liste verwenden. Kein sonstiger Text."
+    )
+
+    content = _call_api(url, api_key, modell, [{"role": "user", "content": prompt}])
+    result = _parse_mapping(content, len(texts), kategorien)
+    if result is not None:
+        return result
+
+    # Fallback: vereinfachter Prompt
+    simple_prompt = (
+        f"Kategorien: {', '.join(kategorien)}\n\n"
+        f"Transaktionen:\n" + "\n".join(f"{i}: {t}" for i, t in enumerate(texts)) +
+        f"\n\nJSON-Antwort: {{\"0\": \"Kategorie\", ...}}"
+    )
+    content2 = _call_api(url, api_key, modell, [{"role": "user", "content": simple_prompt}], max_tokens=512)
+    result2 = _parse_mapping(content2, len(texts), kategorien)
+    return result2 if result2 is not None else ["Sonstiges"] * len(texts)
+
+
+def _keyword_assign(buchungstext: str, bp_map: dict):
+    KEYWORDS = {
+        "Wohnen": ["miete", "nebenkosten", "strom", "gas", "wasser", "heizung", "haus", "wohnung", "grundsteuer"],
+        "Mobilitaet": ["tankstelle", "benzin", "diesel", "kfz", "fahrzeug", "auto", "bahn", "bvg", "mvv", "db ", "parken"],
+        "Versicherung": ["versicherung", "allianz", "huk", "axa", "debeka", "signal", "beitrag"],
+        "Lebensmittel": ["rewe", "edeka", "aldi", "lidl", "kaufland", "netto", "penny", "baeckerei", "metzgerei", "bio"],
+        "Freizeit": ["netflix", "spotify", "amazon", "kino", "theater", "restaurant", "cafe", "hotel", "urlaub"],
+        "Einkommen": ["gehalt", "lohn", "rente", "erstattung", "rueckzahlung", "steuererstattung"],
+    }
+    text = (buchungstext or "").lower()
+    for kat, keywords in KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            return bp_map.get(kat)
+    return None
+
+
+BATCH_SIZE = 20
 
 
 @frappe.whitelist()
 def ai_assign_budgetposten(bankkonto: str = None) -> dict:
-    """Assign budgetposten using AI categorization (OpenAI-compatible API)."""
     settings = _get_settings()
-    if not settings.get("aktiv"):
-        # Fall back to keyword matching
-        from ktesis.api.csv_import import auto_assign_budgetposten
-        return auto_assign_budgetposten(bankkonto=bankkonto)
 
-    # Load Budgetposten
-    bp_list = frappe.get_all("Budgetposten", fields=["name", "kategorie"])
-    if not bp_list:
-        return {"assigned": 0, "method": "ai", "error": "Keine Budgetposten vorhanden"}
-
+    bp_list = frappe.get_all("Budgetposten", fields=["name", "kategorie", "ki_beschreibung"])
     bp_map = {b.kategorie: b.name for b in bp_list}
+    beschreibungen = {b.kategorie: (b.get("ki_beschreibung") or "") for b in bp_list}
     kategorien = list(bp_map.keys())
 
-    # Load unassigned Bankbuchungen
+    if not kategorien:
+        return {"assigned": 0, "method": "none", "error": "Keine Budgetposten gefunden"}
+
     filters = {"budgetposten": ["is", "not set"]}
     if bankkonto:
         filters["bankkonto"] = bankkonto
 
-    buchungen = frappe.get_all(
-        "Bankbuchung",
-        filters=filters,
-        fields=["name", "buchungstext"],
-        limit=500,
-    )
-
+    buchungen = frappe.get_all("Bankbuchung", filters=filters, fields=["name", "buchungstext"])
     if not buchungen:
-        return {"assigned": 0, "method": "ai"}
+        return {"assigned": 0, "total": 0, "method": "none"}
 
-    # Process in batches of 20
-    batch_size = 20
     assigned = 0
+    method = "keyword"
 
-    for i in range(0, len(buchungen), batch_size):
-        batch = buchungen[i : i + batch_size]
-        texts = [b.buchungstext for b in batch]
-        categories = _classify_batch(texts, kategorien, settings)
-
-        for b, kat in zip(batch, categories):
-            bp_name = bp_map.get(kat)
+    if settings.get("aktiv") and settings.get("api_key"):
+        method = "ki"
+        for i in range(0, len(buchungen), BATCH_SIZE):
+            batch = buchungen[i:i + BATCH_SIZE]
+            texts = [_preprocess_buchungstext(b.buchungstext) for b in batch]
+            try:
+                ki_kat = _classify_batch(texts, kategorien, settings, beschreibungen)
+                for b, kat in zip(batch, ki_kat):
+                    bp_name = bp_map.get(kat)
+                    if bp_name:
+                        frappe.db.set_value("Bankbuchung", b.name, "budgetposten", bp_name)
+                        assigned += 1
+            except Exception:
+                method = "ki_with_fallback"
+                for b in batch:
+                    bp_name = _keyword_assign(b.buchungstext, bp_map)
+                    if bp_name:
+                        frappe.db.set_value("Bankbuchung", b.name, "budgetposten", bp_name)
+                        assigned += 1
+    else:
+        for b in buchungen:
+            bp_name = _keyword_assign(b.buchungstext, bp_map)
             if bp_name:
                 frappe.db.set_value("Bankbuchung", b.name, "budgetposten", bp_name)
                 assigned += 1
 
     frappe.db.commit()
-    return {"assigned": assigned, "total": len(buchungen), "method": "ai"}
-
-@frappe.whitelist()
-def get_einstellungen() -> dict:
-    try:
-        d = frappe.db.get_singles_dict("Ktesis Einstellungen")
-        return {
-            "ki_aktiv": 1 if str(d.get("ki_aktiv") or "0") in ("1", "1.0", "true", "True") else 0,
-            "ki_anbieter": d.get("ki_anbieter") or "opencode",
-            "ki_api_url": d.get("ki_api_url") or "",
-            "ki_modell": d.get("ki_modell") or "",
-        }
-    except Exception:
-        return {"ki_aktiv": 0, "ki_anbieter": "opencode", "ki_api_url": "", "ki_modell": ""}
-
-
-@frappe.whitelist()
-def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_key=None, ki_modell=None):
-    frappe.db.set_single_value("Ktesis Einstellungen", "ki_aktiv",
-        1 if str(ki_aktiv or "0") in ("1", "true", "True") else 0)
-    frappe.db.set_single_value("Ktesis Einstellungen", "ki_anbieter", ki_anbieter or "opencode")
-    frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_url", ki_api_url or "")
-    frappe.db.set_single_value("Ktesis Einstellungen", "ki_modell", ki_modell or "")
-    if ki_api_key:
-        frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_key", ki_api_key)
-    frappe.db.commit()
-    return {"success": True}
+    return {"assigned": assigned, "total": len(buchungen), "method": method}
 
 
 @frappe.whitelist()
@@ -188,31 +237,25 @@ def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_
 
 
 @frappe.whitelist()
-def get_ki_models(api_url=None, api_key=None):
-    """Fetch available models from OpenAI-compatible API."""
-    import urllib.request as urlreq
+def get_ki_models(api_url: str = None, api_key: str = None) -> dict:
     d = frappe.db.get_singles_dict("Ktesis Einstellungen")
     if not api_url:
         api_url = d.get("ki_api_url") or "https://opencode.ai/zen/go/v1"
     if not api_key:
         api_key = d.get("ki_api_key") or ""
-    base = api_url.rstrip("/")
-    req = urlreq.Request(
-        f"{base}/models",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "User-Agent": "ktesis/1.0",
-        },
+    url = api_url.rstrip("/") + "/models"
+    req = urllib.request.Request(
+        url,
+        headers={"Authorization": f"Bearer {api_key}", "User-Agent": "ktesis/1.0"},
         method="GET",
     )
     try:
-        with urlreq.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read())
-        models = [m.get("id") or m.get("name") for m in data.get("data", data.get("models", []))]
-        return sorted(m for m in models if m)
-    except urlreq.error.HTTPError as e:
-        body = e.read().decode("utf-8", errors="replace")[:300]
-        frappe.throw(f"HTTP {e.code}: {body or e.reason}")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        models = [m.get("id") or m.get("name") for m in data.get("data", [])]
+        return {"models": [m for m in models if m]}
+    except urllib.error.HTTPError as e:
+        e.read()
+        frappe.throw(_(f"HTTP Error {e.code}: {e.reason}"))
     except Exception as e:
-        frappe.throw(str(e))
+        frappe.throw(_(f"Verbindungsfehler: {e}"))
