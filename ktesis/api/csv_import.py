@@ -84,6 +84,8 @@ def _parse_german_amount(s: str, decimal_sep: str = ",") -> float:
 
 
 def _parse_date(s: str) -> str:
+    if not s:
+        return None
     s = s.strip().strip('"')
     for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
         try:
@@ -119,12 +121,15 @@ def _detect_format(header_line):
 
 def _get_col(row, candidates):
     for c in candidates:
-        if c in row and row[c].strip():
-            return row[c].strip().strip('"')
+        val = row.get(c)
+        if val and str(val).strip():
+            return str(val).strip().strip('"')
     for c in candidates:
         for key in row:
-            if c.lower() in key.lower() and row[key].strip():
-                return row[key].strip().strip('"')
+            if c.lower() in key.lower():
+                val = row.get(key)
+                if val and str(val).strip():
+                    return str(val).strip().strip('"')
     return ""
 
 
