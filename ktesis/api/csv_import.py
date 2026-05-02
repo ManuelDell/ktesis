@@ -130,7 +130,6 @@ def _get_col(row, candidates):
 
 @frappe.whitelist()
 def preview_csv(bankkonto: str, csv_content: str) -> dict:
-    frappe.get_doc("Bankkonto", bankkonto)
     if isinstance(csv_content, str):
         raw = csv_content.encode("utf-8")
     else:
@@ -210,7 +209,6 @@ def _auto_kategorisieren(buchungstext):
 
 @frappe.whitelist()
 def import_bankbuchungen(bankkonto, csv_content):
-    frappe.get_doc("Bankkonto", bankkonto)  # raises if not found or no permission
     if isinstance(csv_content, str):
         raw = csv_content.encode("utf-8")
     else:
@@ -279,7 +277,6 @@ def import_bankbuchungen(bankkonto, csv_content):
 @frappe.whitelist()
 def import_bankbuchungen_rows(bankkonto: str, rows: str | list) -> dict:
     """Import pre-processed rows (from preview_csv) with user-edited budgetposten."""
-    frappe.get_doc("Bankkonto", bankkonto)
     if isinstance(rows, str):
         import json
         rows = json.loads(rows)
