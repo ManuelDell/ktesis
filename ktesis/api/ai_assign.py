@@ -60,6 +60,7 @@ def _classify_batch(texts: list[str], kategorien: list[str], settings: dict) -> 
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            "User-Agent": "ktesis/1.0",
         },
         method="POST",
     )
@@ -198,7 +199,11 @@ def get_ki_models(api_url=None, api_key=None):
     base = api_url.rstrip("/")
     req = urlreq.Request(
         f"{base}/models",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "ktesis/1.0",
+        },
         method="GET",
     )
     try:
@@ -206,5 +211,8 @@ def get_ki_models(api_url=None, api_key=None):
             data = json.loads(resp.read())
         models = [m.get("id") or m.get("name") for m in data.get("data", data.get("models", []))]
         return sorted(m for m in models if m)
+    except urlreq.error.HTTPError as e:
+        body = e.read().decode("utf-8", errors="replace")[:300]
+        frappe.throw(f"HTTP {e.code}: {body or e.reason}")
     except Exception as e:
         frappe.throw(str(e))
