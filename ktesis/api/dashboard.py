@@ -150,13 +150,20 @@ def get_budget_vs_ist(monat: int = None, jahr: int = None) -> dict:
     """, (datum_von, datum_bis), as_dict=True)
     fallback_map = {r.buchungskategorie: float(r.gesamt or 0) for r in fallback_rows}
 
-    kategorien = ["Wohnen", "Mobilitaet", "Versicherung", "Lebensmittel", "Freizeit", "Einkommen", "Sonstiges"]
+    # Dynamisch: alle Kategorien aus Budgetposten + Kategorien aus Buchungen ohne Budget
+    alle_kat = [b.kategorie for b in budgets]
+    for kat in list(linked_map.keys()) + list(fallback_map.keys()):
+        bp_kat = next((b.kategorie for b in budgets if b.name == kat), kat)
+        if bp_kat not in alle_kat:
+            alle_kat.append(bp_kat)
     result = []
-    for kat in kategorien:
-        # Find budget entry for this category
+    seen = set()
+    for kat in alle_kat:
+        if kat in seen:
+            continue
+        seen.add(kat)
         bp = next((b for b in budgets if b.kategorie == kat), None)
         budget = float(bp.betrag_monatlich or 0) if bp else 0
-        # Ist: linked buchungen + fallback
         ist_linked = linked_map.get(bp.name, 0) if bp else 0
         ist_fallback = fallback_map.get(kat, 0)
         ist = ist_linked + ist_fallback

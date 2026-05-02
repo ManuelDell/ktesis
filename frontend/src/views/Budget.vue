@@ -186,7 +186,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="kat in ['Wohnen','Mobilitaet','Versicherung','Lebensmittel','Freizeit','Einkommen','Sonstiges']"
+              v-for="kat in jahresKategorien"
               :key="kat"
               class="border-t border-outline-gray-1 hover:bg-surface-gray-1"
             >
@@ -248,6 +248,14 @@ const buchungenByKat = ref({})
 
 const viewMode = ref('monat')
 const jahresData = ref([])
+const jahresKategorien = computed(() => {
+  if (!jahresData.value.length) return []
+  const seen = new Set()
+  for (const m of jahresData.value) {
+    for (const k of m.kategorien) seen.add(k.kategorie)
+  }
+  return [...seen]
+})
 
 const monate = [
   { value: 1, label: 'Januar' }, { value: 2, label: 'Februar' },
