@@ -7,8 +7,9 @@
  "fields": [
   {
    "fieldname": "kategorie",
-   "fieldtype": "Data",
+   "fieldtype": "Select",
    "label": "Kategorie",
+   "options": "Wohnen\nMobilitaet\nVersicherung\nLebensmittel\nFreizeit\nEinkommen\nSonstiges",
    "reqd": 1
   },
   {

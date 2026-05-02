@@ -96,28 +96,73 @@
         </div>
       </div>
 
-      <!-- Budget-Bearbeitung -->
-      <div v-if="showBudgetForm" class="bg-white border border-outline-gray-2 rounded-lg p-5">
-        <h3 class="font-medium text-ink-gray-8 mb-4">Budget-Posten bearbeiten</h3>
+      <!-- Budgettöpfe verwalten -->
+      <div v-if="showBudgetForm" class="bg-white border border-outline-gray-2 rounded-lg p-5 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-medium text-ink-gray-8">Budgettöpfe verwalten</h3>
+          <Button variant="solid" theme="gray" size="md" @click="addNewBudgettopf">
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <FeatherIcon name="plus" class="w-4 h-4" />
+              Neuer Budgettopf
+            </span>
+          </Button>
+        </div>
+
         <div v-if="loadingBudgets" class="text-center py-4 text-ink-gray-4">Lade...</div>
-        <div v-else class="space-y-3">
-          <div v-for="kat in alleKategorien" :key="kat" class="flex items-center gap-4">
-            <span class="w-32 text-sm text-ink-gray-7 shrink-0">{{ kat }}</span>
-            <input
-              type="number"
-              min="0"
-              step="10"
-              :value="budgetForm[kat] || ''"
-              @input="budgetForm[kat] = parseFloat($event.target.value) || 0"
-              placeholder="0,00"
-              class="border border-outline-gray-3 rounded-md px-3 py-1.5 text-sm w-36"
-            />
-            <span class="text-xs text-ink-gray-4">€/Monat</span>
+        <div v-else>
+          <div v-if="!editableBudgets.length" class="text-center py-6 text-ink-gray-4 text-sm">
+            Noch keine Budgettöpfe. Erstelle deinen ersten!
           </div>
-          <div class="flex justify-end gap-3 pt-3">
-            <Button variant="outline" theme="gray" @click="showBudgetForm = false">Abbrechen</Button>
-            <Button variant="solid" theme="gray" :loading="savingBudget" @click="saveBudgets">Speichern</Button>
-          </div>
+          <table v-else class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-outline-gray-2">
+                <th class="text-left py-2 px-3 font-medium text-ink-gray-5">Name</th>
+                <th class="text-left py-2 px-3 font-medium text-ink-gray-5">€/Monat</th>
+                <th class="text-left py-2 px-3 font-medium text-ink-gray-5 w-32">Notiz</th>
+                <th class="py-2 px-3 w-24"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(b, i) in editableBudgets" :key="b._key" class="border-b border-outline-gray-1">
+                <td class="py-2 px-3">
+                  <input
+                    v-model="b.kategorie"
+                    type="text"
+                    placeholder="z.B. Urlaub"
+                    class="border border-outline-gray-2 rounded px-2 py-1 text-sm w-full"
+                  />
+                </td>
+                <td class="py-2 px-3">
+                  <input
+                    v-model.number="b.betrag_monatlich"
+                    type="number"
+                    min="0"
+                    step="10"
+                    placeholder="0"
+                    class="border border-outline-gray-2 rounded px-2 py-1 text-sm w-28"
+                  />
+                </td>
+                <td class="py-2 px-3">
+                  <input
+                    v-model="b.notiz"
+                    type="text"
+                    placeholder="optional"
+                    class="border border-outline-gray-2 rounded px-2 py-1 text-sm w-full"
+                  />
+                </td>
+                <td class="py-2 px-3">
+                  <div class="flex items-center gap-2">
+                    <Button variant="solid" theme="gray" size="sm" :loading="b._saving" @click="saveBudgettopf(b)">
+                      <FeatherIcon name="check" class="w-3 h-3" />
+                    </Button>
+                    <Button variant="outline" theme="red" size="sm" :loading="b._deleting" @click="deleteBudgettopf(b, i)">
+                      <FeatherIcon name="trash-2" class="w-3 h-3" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </template>
@@ -196,9 +241,8 @@ const kategorien = ref([])
 const uebersicht = ref(null)
 const showBudgetForm = ref(false)
 const loadingBudgets = ref(false)
-const savingBudget = ref(false)
-const budgetForm = ref({})
-const existingBudgets = ref([])
+const editableBudgets = ref([])
+let _keyCounter = 0
 const expandedKat = ref(null)
 const buchungenByKat = ref({})
 
@@ -243,35 +287,63 @@ async function loadJahresData() {
 async function loadBudgetForm() {
   loadingBudgets.value = true
   try {
-    const all = await list('Budgetposten')
-    existingBudgets.value = all || []
-    const form = {}
-    for (const b of all) {
-      form[b.kategorie] = b.betrag_monatlich
-    }
-    budgetForm.value = form
+    const all = await list('Budgetposten', { fields: ['name', 'kategorie', 'betrag_monatlich', 'notiz'], limit: 100 })
+    editableBudgets.value = (all || []).map(b => ({ ...b, _key: b.name, _saving: false, _deleting: false }))
   } finally {
     loadingBudgets.value = false
   }
 }
 
-async function saveBudgets() {
-  savingBudget.value = true
+function addNewBudgettopf() {
+  editableBudgets.value.push({
+    name: null,
+    kategorie: '',
+    betrag_monatlich: 0,
+    notiz: '',
+    _key: '__new__' + (++_keyCounter),
+    _saving: false,
+    _deleting: false,
+  })
+}
+
+async function saveBudgettopf(b) {
+  if (!b.kategorie?.trim()) return
+  b._saving = true
   try {
-    for (const kat of alleKategorien) {
-      const betrag = budgetForm.value[kat] || 0
-      const existing = existingBudgets.value.find(b => b.kategorie === kat)
-      if (existing) {
-        await update('Budgetposten', existing.name, { betrag_monatlich: betrag })
-      } else if (betrag > 0) {
-        await create('Budgetposten', { kategorie: kat, betrag_monatlich: betrag })
-      }
+    if (b.name) {
+      await update('Budgetposten', b.name, {
+        kategorie: b.kategorie.trim(),
+        betrag_monatlich: b.betrag_monatlich || 0,
+        notiz: b.notiz || '',
+      })
+    } else {
+      const created = await create('Budgetposten', {
+        kategorie: b.kategorie.trim(),
+        betrag_monatlich: b.betrag_monatlich || 0,
+        notiz: b.notiz || '',
+      })
+      b.name = created.name
+      b._key = created.name
     }
-    showBudgetForm.value = false
     await loadData()
-    await loadBudgetForm()
   } finally {
-    savingBudget.value = false
+    b._saving = false
+  }
+}
+
+async function deleteBudgettopf(b, i) {
+  if (!window.confirm(`"${b.kategorie || 'Neuer Eintrag'}" wirklich löschen?`)) return
+  if (!b.name) {
+    editableBudgets.value.splice(i, 1)
+    return
+  }
+  b._deleting = true
+  try {
+    await delete_('Budgetposten', b.name)
+    editableBudgets.value.splice(i, 1)
+    await loadData()
+  } finally {
+    b._deleting = false
   }
 }
 
