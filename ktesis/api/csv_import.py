@@ -151,24 +151,33 @@ def preview_csv(bankkonto: str, csv_content: str) -> dict:
     bp_list = frappe.get_all("Budgetposten", fields=["name", "kategorie"])
     bp_map = {b.kategorie: b.name for b in bp_list}
 
+    # Vorab alle existierenden Buchungen für schnellen Duplicate-Check laden
+    existing = set(
+        (d[0], d[1], float(d[2]))
+        for d in frappe.db.sql(
+            "SELECT datum, buchungstext, betrag FROM `tabBankbuchung` WHERE bankkonto = %s",
+            (bankkonto,)
+        )
+    )
+
     rows = []
     for row in reader:
         date_str = _get_col(row, [fmt["date_col"]])
         betrag_str = _get_col(row, [fmt["amount_col"]])
         buchungstext = _get_col(row, fmt["text_cols"])
         betrag = _parse_german_amount(betrag_str, decimal_sep)
-        datum = _parse_date(date_str)
-        if not datum or betrag is None or betrag == 0:
+        if date_str and date_str.strip().lower() == "offen":
+            datum = None
+        else:
+            datum = _parse_date(date_str)
+        if betrag is None or betrag == 0:
             continue
         if not buchungstext:
-            buchungstext = f"Buchung {datum}"
+            buchungstext = f"Buchung {datum or 'offen'}"
         buchungskategorie = _auto_kategorisieren(buchungstext)
-        is_duplicate = bool(frappe.db.exists("Bankbuchung", {
-            "bankkonto": bankkonto,
-            "datum": datum,
-            "buchungstext": buchungstext[:140],
-            "betrag": betrag,
-        }))
+        is_duplicate = False
+        if datum:
+            is_duplicate = (datum, buchungstext[:140], betrag) in existing
         rows.append({
             "datum": datum,
             "buchungstext": buchungstext[:140],

@@ -188,12 +188,23 @@ function onFileSelected(e) {
 function processFile(file) {
   fileError.value = null
   loading.value = true
-  const reader = new FileReader()
-  reader.onload = async (e) => {
+
+  const tryRead = (encoding) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target.result)
+    reader.onerror = reject
+    reader.readAsText(file, encoding)
+  })
+
+  ;(async () => {
     try {
+      let content = await tryRead('UTF-8')
+      if (content.includes('\uFFFD')) {
+        content = await tryRead('ISO-8859-1')
+      }
       const res = await call('ktesis.api.csv_import.preview_csv', {
         bankkonto: props.bankkonto,
-        csv_content: e.target.result,
+        csv_content: content,
       })
       allRows.value = res.rows || []
       detectedFormat.value = res.format
@@ -207,8 +218,7 @@ function processFile(file) {
     } finally {
       loading.value = false
     }
-  }
-  reader.readAsText(file)
+  })()
 }
 
 async function doImport() {
