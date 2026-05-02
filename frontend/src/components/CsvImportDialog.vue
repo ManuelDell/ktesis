@@ -9,6 +9,20 @@
 
         <!-- Schritt 1: Datei auswählen -->
         <div v-if="step === 1">
+          <!-- Bankkonto auswählen -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-ink-gray-7 mb-2">Bankkonto</label>
+            <select
+              v-model="selectedBankkonto"
+              class="w-full border border-outline-gray-2 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="" disabled>— Konto wählen —</option>
+              <option v-for="k in bankkontoList" :key="k.name" :value="k.name">
+                {{ k.bezeichnung || k.name }} {{ k.iban ? '· ' + k.iban : '' }}
+              </option>
+            </select>
+          </div>
+
           <label class="block text-sm font-medium text-ink-gray-7 mb-2">CSV-Datei auswählen</label>
           <div
             class="border-2 border-dashed border-outline-gray-3 rounded-lg p-8 text-center cursor-pointer hover:border-outline-gray-5 transition-colors"
@@ -88,7 +102,7 @@
 
           <div class="flex justify-end gap-3">
             <Button variant="outline" theme="gray" @click="reset">Abbrechen</Button>
-            <Button variant="solid" theme="gray" :loading="importing" :disabled="!newRows.length" @click="doImport">
+            <Button variant="solid" theme="gray" :loading="importing" :disabled="!newRows.length || !selectedBankkonto" @click="doImport">
               <span class="flex items-center gap-2 whitespace-nowrap">
                 <FeatherIcon name="download" class="w-4 h-4" />
                 {{ newRows.length }} Buchungen importieren
@@ -152,11 +166,17 @@ const importing = ref(false)
 const loading = ref(false)
 const result = ref(null)
 const budgetposten = ref([])
+const bankkontoList = ref([])
+const selectedBankkonto = ref(props.bankkonto || '')
 
 const newRows = computed(() => allRows.value.filter(r => !r.duplicate))
 const dupRows = computed(() => allRows.value.filter(r => r.duplicate))
 
 onMounted(async () => {
+  bankkontoList.value = await list('Bankkonto', { fields: ['name', 'bezeichnung', 'iban'], limit: 50 }) || []
+  if (!selectedBankkonto.value && bankkontoList.value.length === 1) {
+    selectedBankkonto.value = bankkontoList.value[0].name
+  }
   budgetposten.value = await list('Budgetposten', { fields: ['name', 'kategorie'], limit: 50 }) || []
 })
 
@@ -166,6 +186,7 @@ function reset() {
   detectedFormat.value = null
   result.value = null
   fileError.value = null
+  selectedBankkonto.value = props.bankkonto || ''
   if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -203,7 +224,7 @@ function processFile(file) {
         content = await tryRead('ISO-8859-1')
       }
       const res = await call('ktesis.api.csv_import.preview_csv', {
-        bankkonto: props.bankkonto,
+        bankkonto: selectedBankkonto.value,
         csv_content: content,
       })
       allRows.value = res.rows || []
@@ -225,7 +246,7 @@ async function doImport() {
   importing.value = true
   try {
     const res = await call('ktesis.api.csv_import.import_bankbuchungen_rows', {
-      bankkonto: props.bankkonto,
+      bankkonto: selectedBankkonto.value,
       rows: JSON.stringify(allRows.value),
     })
     result.value = res
