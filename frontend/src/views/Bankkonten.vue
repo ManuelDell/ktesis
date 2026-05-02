@@ -36,8 +36,18 @@
         Keine Bankkonten gefunden.
       </div>
 
+      <!-- Konten ein-/ausblenden -->
+      <template v-else>
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm text-ink-gray-5">{{ filteredList.length }} Konten</span>
+        <button @click="kontenVisible = !kontenVisible" class="flex items-center gap-1 text-xs text-ink-gray-5 hover:text-ink-gray-8 transition-colors">
+          <FeatherIcon :name="kontenVisible ? 'chevron-up' : 'chevron-down'" class="w-4 h-4" />
+          {{ kontenVisible ? 'Ausblenden' : 'Einblenden' }}
+        </button>
+      </div>
+
       <!-- Karten-Liste -->
-      <div v-else class="grid gap-4">
+      <div class="grid gap-4" v-show="kontenVisible">
         <div
           v-for="item in filteredList"
           :key="item.name"
@@ -83,6 +93,7 @@
           </div>
         </div>
       </div>
+      </template>
 
       <!-- Buchungsliste -->
       <div class="mt-8">
@@ -97,6 +108,19 @@
               Auto-zuordnen
             </span>
           </Button>
+        </div>
+        <!-- Filter -->
+        <div class="flex items-center gap-3 mb-3 flex-wrap">
+          <label class="flex items-center gap-2 text-sm text-ink-gray-6 cursor-pointer select-none">
+            <input type="checkbox" v-model="nurUnzugeordnet" @change="onFilterChange" class="rounded" />
+            Nur unzugeordnete
+          </label>
+          <select v-model="filterBankkonto" @change="onFilterChange"
+            class="border border-outline-gray-2 rounded px-3 py-1.5 text-sm bg-white">
+            <option value="">Alle Konten</option>
+            <option v-for="k in listData" :key="k.name" :value="k.name">{{ k.bezeichnung || k.name }}</option>
+          </select>
+          <span class="text-xs text-ink-gray-4">{{ totalBuchungen }} Buchungen</span>
         </div>
         <div v-if="buchungenLoading" class="text-center py-8 text-ink-gray-4">Lade Buchungen...</div>
         <div v-else-if="buchungen.length === 0" class="text-center py-8 text-ink-gray-4">
@@ -182,6 +206,29 @@
               </tr>
             </tbody>
           </table>
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-outline-gray-1">
+            <span class="text-xs text-ink-gray-5">
+              Seite {{ currentPage }} von {{ totalPages }} &middot; {{ totalBuchungen }} Buchungen
+            </span>
+            <div class="flex items-center gap-1">
+              <button
+                @click="goToPage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="p-1.5 rounded hover:bg-surface-gray-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <FeatherIcon name="chevron-left" class="w-4 h-4" />
+              </button>
+              <span class="text-xs px-2 text-ink-gray-7">{{ currentPage }}</span>
+              <button
+                @click="goToPage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                class="p-1.5 rounded hover:bg-surface-gray-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <FeatherIcon name="chevron-right" class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -214,7 +261,7 @@
       :options="{ title: 'Bankkonto anlegen', size: 'xl' }"
       v-model="showCreateDialog"
     >
-      <template #body>
+      <template #body-content>
         <BankkontoDetail
           modal
           :name="null"
@@ -232,7 +279,7 @@
       ]}"
       v-model="showDeleteDialog"
     >
-      <template #body>
+      <template #body-content>
         <p class="text-sm text-ink-gray-6">
           Sind Sie sicher, dass Sie <strong>{{ itemToDelete?.bezeichnung }}</strong> löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
         </p>
@@ -247,7 +294,7 @@
       ]}"
       v-model="showDeleteBuchungDialog"
     >
-      <template #body>
+      <template #body-content>
         <div class="px-5 py-4">
           <p class="text-sm text-ink-gray-6">
             Buchung <strong>{{ buchungToDelete?.buchungstext }}</strong> ({{ formatCurrency(buchungToDelete?.betrag) }}) wirklich löschen?
@@ -264,7 +311,7 @@
       ]}"
       v-model="showKontoWechselDialog"
     >
-      <template #body>
+      <template #body-content>
         <div class="px-5 py-4 space-y-3">
           <p class="text-sm text-ink-gray-6">Buchung: <strong>{{ buchungToMove?.buchungstext }}</strong></p>
           <div>
@@ -286,7 +333,7 @@
       ]}"
       v-model="showBulkDeleteDialog"
     >
-      <template #body>
+      <template #body-content>
         <div class="px-5 py-4">
           <p class="text-sm text-ink-gray-6">{{ selectedBuchungen.size }} Buchungen wirklich unwiderruflich löschen?</p>
         </div>
@@ -301,7 +348,7 @@
       ]}"
       v-model="showBulkKontoDialog"
     >
-      <template #body>
+      <template #body-content>
         <div class="px-5 py-4">
           <p class="text-sm text-ink-gray-6 mb-3">{{ selectedBuchungen.size }} Buchungen umbuchen auf:</p>
           <select v-model="bulkKontoTarget" class="w-full border border-outline-gray-2 rounded px-3 py-2 text-sm bg-white">
@@ -358,6 +405,16 @@ const bulkDeleting = ref(false)
 const showBulkDeleteDialog = ref(false)
 const showBulkKontoDialog = ref(false)
 const bulkKontoTarget = ref('')
+
+// Karten einklappen
+const kontenVisible = ref(true)
+
+// Buchungs-Filter + Pagination
+const filterBankkonto = ref('')
+const nurUnzugeordnet = ref(false)
+const currentPage = ref(1)
+const pageSize = 50
+const totalBuchungen = ref(0)
 
 const allSelected = computed(() =>
   buchungen.value.length > 0 && buchungen.value.every(b => selectedBuchungen.value.has(b.name))
@@ -466,14 +523,40 @@ async function loadList() {
 async function loadBuchungen() {
   buchungenLoading.value = true
   try {
-    const res = await call('ktesis.api.bankkonto.get_buchungen', { limit: 50 })
+    const offset = (currentPage.value - 1) * pageSize
+    const [res, count] = await Promise.all([
+      call('ktesis.api.bankkonto.get_buchungen', {
+        limit: pageSize,
+        offset,
+        nur_unzugeordnet: nurUnzugeordnet.value ? 1 : 0,
+        bankkonto: filterBankkonto.value || null,
+      }),
+      call('ktesis.api.bankkonto.get_buchungen_count', {
+        nur_unzugeordnet: nurUnzugeordnet.value ? 1 : 0,
+        bankkonto: filterBankkonto.value || null,
+      }),
+    ])
     buchungen.value = res || []
+    totalBuchungen.value = count || 0
+    selectedBuchungen.value = new Set()
   } catch (e) {
     buchungen.value = []
-    selectedBuchungen.value = new Set()
   } finally {
     buchungenLoading.value = false
   }
+}
+
+const totalPages = computed(() => Math.ceil(totalBuchungen.value / pageSize))
+
+function goToPage(p) {
+  if (p < 1 || p > totalPages.value) return
+  currentPage.value = p
+  loadBuchungen()
+}
+
+function onFilterChange() {
+  currentPage.value = 1
+  loadBuchungen()
 }
 
 function formatCurrency(value) {

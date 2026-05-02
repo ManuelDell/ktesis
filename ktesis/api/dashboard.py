@@ -129,7 +129,7 @@ def get_budget_vs_ist(monat: int = None, jahr: int = None) -> dict:
 
     # Aggregate by budgetposten link (primary)
     linked_rows = frappe.db.sql("""
-        SELECT budgetposten, SUM(ABS(betrag)) as gesamt
+        SELECT budgetposten, SUM(betrag) as gesamt
         FROM `tabBankbuchung`
         WHERE datum >= %s AND datum < %s
           AND budgetposten IS NOT NULL AND budgetposten != ''
@@ -139,7 +139,7 @@ def get_budget_vs_ist(monat: int = None, jahr: int = None) -> dict:
 
     # Aggregate by buchungskategorie (fallback for unlinked bookings)
     fallback_rows = frappe.db.sql("""
-        SELECT buchungskategorie, SUM(ABS(betrag)) as gesamt
+        SELECT buchungskategorie, SUM(betrag) as gesamt
         FROM `tabBankbuchung`
         WHERE datum >= %s AND datum < %s
           AND (budgetposten IS NULL OR budgetposten = '')
@@ -191,7 +191,7 @@ def get_monatsuebersicht(monat: int, jahr: int) -> dict:
         datum_bis = f"{jahr}-{monat+1:02d}-01"
 
     rows = frappe.db.sql("""
-        SELECT kategorie, SUM(ABS(betrag)) as gesamt
+        SELECT kategorie, SUM(betrag) as gesamt
         FROM `tabBankbuchung`
         WHERE datum >= %s AND datum < %s
         GROUP BY kategorie
@@ -236,7 +236,7 @@ def get_buchungen_verlauf(monate: int = 12) -> list:
         datum_bis = f"{year}-{month:02d}-{last_day}"
 
         rows = frappe.db.sql("""
-            SELECT kategorie, COALESCE(SUM(ABS(betrag)), 0) as gesamt
+            SELECT kategorie, COALESCE(SUM(betrag), 0) as gesamt
             FROM `tabBankbuchung`
             WHERE datum BETWEEN %s AND %s
             GROUP BY kategorie

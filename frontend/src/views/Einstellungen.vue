@@ -105,6 +105,42 @@
       </div>
     </div>
 
+    <!-- Daten-Management -->
+    <div class="border-t border-outline-gray-2 pt-6">
+      <h3 class="text-base font-semibold text-ink-gray-8 mb-4">Daten-Management</h3>
+      <div class="bg-surface-red-1 border border-outline-red-2 rounded-lg p-4">
+        <p class="text-sm text-ink-gray-6 mb-3">
+          Löscht alle importierten Bankbuchungen unwiderruflich. Bankkonten und Budgets bleiben erhalten.
+        </p>
+        <Button variant="solid" theme="red" size="md" @click="confirmDeleteAll">
+          <span class="flex items-center gap-2 whitespace-nowrap">
+            <FeatherIcon name="trash-2" class="w-4 h-4" />
+            Alle Buchungen löschen
+          </span>
+        </Button>
+      </div>
+    </div>
+
+    <!-- Bestätigungsdialog -->
+    <Dialog
+      :options="{
+        title: 'Alle Buchungen löschen',
+        size: 'sm',
+        actions: [
+          { label: 'Abbrechen', variant: 'outline', theme: 'gray', onClick: () => showDeleteAllDialog = false },
+          { label: 'Ja, alle löschen', variant: 'solid', theme: 'red', onClick: doDeleteAll }
+        ]
+      }"
+      v-model="showDeleteAllDialog"
+    >
+      <template #body-content>
+        <div class="px-5 py-4 space-y-2">
+          <p class="text-sm font-semibold text-ink-gray-8">Diese Aktion kann nicht rückgängig gemacht werden.</p>
+          <p class="text-sm text-ink-gray-6">Wirklich alle Bankbuchungen löschen?</p>
+        </div>
+      </template>
+    </Dialog>
+
   </div>
 </template>
 
@@ -130,6 +166,8 @@ const availableModels = ref([])
 const loadingModels = ref(false)
 const testing = ref(false)
 const testResult = ref(null)
+const showDeleteAllDialog = ref(false)
+const deletingAll = ref(false)
 
 const ANBIETER_DEFAULTS = {
   opencode: { url: 'https://opencode.ai/zen/go/v1', modell: 'kimi-k2.6' },
@@ -213,6 +251,23 @@ async function save() {
     saveError.value = e.message || 'Fehler beim Speichern'
   } finally {
     saving.value = false
+  }
+}
+
+function confirmDeleteAll() {
+  showDeleteAllDialog.value = true
+}
+
+async function doDeleteAll() {
+  deletingAll.value = true
+  try {
+    const res = await call('ktesis.api.ai_assign.delete_all_buchungen')
+    showDeleteAllDialog.value = false
+    alert(`${res.deleted} Buchungen gelöscht.`)
+  } catch (e) {
+    alert('Fehler: ' + (e.message || 'Unbekannter Fehler'))
+  } finally {
+    deletingAll.value = false
   }
 }
 </script>

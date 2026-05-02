@@ -72,15 +72,39 @@ def delete_bank_account(name):
 
 
 @frappe.whitelist()
-def get_buchungen(limit=50):
-	"""Return recent bank transactions with account names."""
+def get_buchungen(limit=50, offset=0, nur_unzugeordnet=0, bankkonto=None):
+	filters = {}
+	if int(nur_unzugeordnet or 0):
+		filters["budgetposten"] = ["is", "not set"]
+	if bankkonto:
+		filters["bankkonto"] = bankkonto
+
 	buchungen = frappe.get_all(
 		"Bankbuchung",
-		fields=["name", "bankkonto", "datum", "buchungstext", "betrag", "kategorie", "notizen", "budgetposten"],
+		fields=["name", "bankkonto", "datum", "buchungstext", "betrag",
+				"kategorie", "notizen", "budgetposten"],
+		filters=filters,
 		limit=int(limit),
+		start=int(offset),
 		order_by="datum desc",
 	)
-	# enrich with account name
+	# Batch-Load Kontonamen (kein N+1)
+	konto_names = list({b.bankkonto for b in buchungen if b.bankkonto})
+	konto_map = {}
+	if konto_names:
+		konten = frappe.get_all("Bankkonto", filters={"name": ["in", konto_names]},
+							fields=["name", "bezeichnung"])
+		konto_map = {k.name: k.bezeichnung for k in konten}
 	for b in buchungen:
-		b["bankkonto_bezeichnung"] = frappe.db.get_value("Bankkonto", b["bankkonto"], "bezeichnung")
+		b["bankkonto_bezeichnung"] = konto_map.get(b.bankkonto, b.bankkonto)
 	return buchungen
+
+
+@frappe.whitelist()
+def get_buchungen_count(nur_unzugeordnet=0, bankkonto=None):
+	filters = {}
+	if int(nur_unzugeordnet or 0):
+		filters["budgetposten"] = ["is", "not set"]
+	if bankkonto:
+		filters["bankkonto"] = bankkonto
+	return frappe.db.count("Bankbuchung", filters)

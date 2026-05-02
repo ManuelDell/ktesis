@@ -183,8 +183,15 @@
           <label class="text-sm text-ink-gray-6 mt-4 mb-1 block">
             Zusätzliche Tilgung: <strong>{{ extraTilgung }} €/Monat</strong>
           </label>
-          <input type="range" v-model.number="extraTilgung" min="0" max="500" step="25" class="w-full" />
-          <div class="flex justify-between text-xs text-ink-gray-4 mt-1"><span>0 €</span><span>500 €</span></div>
+          <input type="range" v-model.number="extraTilgung" min="0" :max="maxSondertilgungMonatlich" step="25" class="w-full" />
+          <p class="text-xs text-ink-gray-4 mt-1">
+            Max. erlaubt: {{ fmtEuro(maxSondertilgungMonatlich) }}/Monat
+            ({{ finance?.darlehen?.[tilgungDarlehenIdx]?.sondertilgungssatz || 5 }}% p.a.)
+          </p>
+          <p v-if="extraTilgung >= maxSondertilgungMonatlich && maxSondertilgungMonatlich > 0"
+             class="text-xs text-ink-yellow-3 mt-1">
+            ⚠ Limit erreicht — höhere Sondertilgung vertraglich nicht erlaubt
+          </p>
         </div>
         <div v-if="tilgungErgebnis" class="space-y-3">
           <div class="grid grid-cols-2 gap-3">
@@ -210,8 +217,8 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController } from 'chart.js'
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, BarController)
+import { Chart, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, BarController, LineController } from 'chart.js'
+Chart.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, BarController, LineController)
 import { FeatherIcon, Badge } from 'frappe-ui'
 import KachelCard from '../components/KachelCard.vue'
 import { useApi } from '../composables/useApi.js'
@@ -234,6 +241,23 @@ let chartInstance = null
 const tilgungDarlehenIdx = ref(0)
 const extraTilgung = ref(100)
 
+// Trendlinie berechnen (gleitender 3-Monats-Durchschnitt)
+function movingAvg(data, window = 3) {
+  return data.map((_, i) => {
+    const slice = data.slice(Math.max(0, i - window + 1), i + 1)
+    return slice.reduce((a, b) => a + b, 0) / slice.length
+  })
+}
+
+const maxSondertilgungMonatlich = computed(() => {
+  const d = finance.value?.darlehen?.[tilgungDarlehenIdx.value]
+  if (!d) return 500
+  const satz = parseFloat(d.sondertilgungssatz || 5)
+  const betrag = parseFloat(d.darlehensbetrag || 0)
+  if (!betrag) return 500
+  return Math.round(betrag * satz / 100 / 12)
+})
+
 function fmtEuro(n) {
   if (n == null) return '-'
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
@@ -247,8 +271,9 @@ function ampelCardClass(color) {
   }
 }
 
-function berechneTilgung(restschuld, zinssatz, monatsrate, extra) {
+function berechneTilgung(restschuld, zinssatz, monatsrate, extra, maxExtra) {
   if (!restschuld || !monatsrate || monatsrate <= 0) return null
+  const effektiveSondertilgung = Math.min(extra, maxExtra || Infinity)
   const monatszins = (zinssatz || 0) / 100 / 12
   function calc(rate) {
     let schuld = restschuld, zinsen = 0, monate = 0
@@ -258,14 +283,14 @@ function berechneTilgung(restschuld, zinssatz, monatsrate, extra) {
     }
     return { monate, zinsen }
   }
-  const alt = calc(monatsrate), neu = calc(monatsrate + extra)
+  const alt = calc(monatsrate), neu = calc(monatsrate + effektiveSondertilgung)
   return { monate_alt: alt.monate, monate_neu: neu.monate, zinsersparnis: Math.max(0, alt.zinsen - neu.zinsen) }
 }
 
 const tilgungErgebnis = computed(() => {
   const d = finance.value.darlehen?.[tilgungDarlehenIdx.value]
   if (!d) return null
-  return berechneTilgung(d.restschuld, d.zinssatz, d.monatliche_rate, extraTilgung.value)
+  return berechneTilgung(d.restschuld, d.zinssatz, d.monatliche_rate, extraTilgung.value, maxSondertilgungMonatlich.value)
 })
 
 onMounted(async () => {
@@ -303,6 +328,28 @@ onMounted(async () => {
           datasets: [
             { label: 'Einnahmen', data: verlaufData.map(r => r.einnahmen), backgroundColor: 'rgba(34,197,94,0.6)', borderRadius: 4 },
             { label: 'Ausgaben', data: verlaufData.map(r => r.ausgaben), backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4 },
+            {
+              type: 'line',
+              label: 'Trend Einnahmen',
+              data: movingAvg(verlaufData.map(r => r.einnahmen)),
+              borderColor: 'rgba(34,197,94,0.9)',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointRadius: 3,
+              tension: 0.4,
+              order: 0,
+            },
+            {
+              type: 'line',
+              label: 'Trend Ausgaben',
+              data: movingAvg(verlaufData.map(r => r.ausgaben)),
+              borderColor: 'rgba(239,68,68,0.9)',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointRadius: 3,
+              tension: 0.4,
+              order: 0,
+            },
           ],
         },
         options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } },

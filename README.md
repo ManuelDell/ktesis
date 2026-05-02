@@ -1,175 +1,58 @@
-# ktesis — Persoenliche Vermoegensverwaltung
+# Ktesis — Persönliche Vermögensverwaltung
 
-Frappe-App zur strukturierten Verwaltung von Finanzen, Vermoegenswerten und Vertraegen. Vue 3 SPA auf Frappe-Basis.
+Ktesis ist eine [Frappe](https://frappe.io/) v15 App zur persönlichen Vermögensverwaltung. Sie läuft als Single-Tenant-Instanz und bietet:
 
-## Features
+- **Bankkonten & Buchungen** — CSV-Import (DKB, Sparkasse, ING, Comdirect, Commerzbank, Deutsche Bank, N26, Trade Republic), manuelle Zuordnung zu Budgettöpfen
+- **KI-Kategorisierung** — automatische Buchungszuordnung via OpenCode-kompatible LLM-APIs (OpenAI-Format)
+- **Budget-Planung** — Monats- und Jahresübersicht, Soll-Ist-Vergleich, Saldo-Anzeige
+- **Immobilien** — Wohnungen mit Typen (Eigentum/Gemietet/Vermietet), Soll-Ist-Budget-Verknüpfung, Abschreibungen
+- **Fahrzeuge** — Fahrzeugverwaltung mit Dokument-Upload (Fahrzeugschein/Fahrzeugbrief)
+- **Darlehen** — Tilgungsplan, Sondertilgungssatz, Was-wäre-wenn-Rechner
+- **Verträge** — Kündigungsfristen-Ampel, E-Mail-Reminder
+- **Dashboard** — Einnahmen/Ausgaben-Chart (12 Monate) mit Trendlinien, Tilgungsrechner
 
-### Vermoegensverwaltung
-- **Fahrzeuge** — Kennzeichen, FIN, Kilometerstand, Anschaffungswert, Fahrzeugbild
-- **Wohnungen** — Kaufpreis, Wohnflaeche, Baujahr, laufende Kosten, Status (bewohnt/vermietet/leerstehend)
-- **Darlehen** — Zinssatz, Laufzeit, monatliche Rate, Tilgungsplan-Berechnung
-- **Abschreibungen** — Abschreibungssatz, -betrag, Zuordnung zu Assets
+## Voraussetzungen
 
-### Banking & Buchungen
-- **Bankkonten** — IBAN-Validierung, mehrere Konten, Kontostaende
-- **Bankbuchungen** — manuelle Erfassung + CSV-Import (DKB, Sparkasse, ING)
-- **CSV-Auto-Import** — erkennt Bankformat automatisch, verhindert Duplikate, Vorschau (5 Zeilen)
-- **Buchungskategorien** — Wohnen, Mobilitaet, Versicherung, Lebensmittel, Freizeit, Einkommen, Sonstiges
-
-### Budget-Planung
-- **Budgetposten** — monatliche Sollbetrage je Kategorie
-- **Soll-Ist-Vergleich** — Monat auswaehlen, Fortschrittsbalken je Kategorie
-
-### Vertraege
-- **Vertragsverwaltung** — Laufzeit, monatliche Kosten, Kuendigungsfrist
-- **Kuendigungsfristen-Ampel** — rot (<=14 Tage), gelb (<=60 Tage), gruen
-- **Dokument-Anhang** — PDF/Scan direkt am Vertrag ablegen
-- **E-Mail-Reminder** — woechentlicher Scheduler fuer nahende Kuendigungsfristen
-
-### Dashboard
-- **Einnahmen/Ausgaben-Chart** — Balkendiagramm der letzten 12 Monate (Chart.js)
-- **Vermoegensuebersicht** — Kacheln mit Gesamtvermoegen, offene Darlehen, Monatssaldo
-- **Tilgungsrechner** — Was-waere-wenn Sondertilgung mit Schieberegler
-
-## Screenshots
-
-### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
-
-### Fahrzeuge
-![Fahrzeuge](docs/screenshots/fahrzeuge.png)
-
-### Wohnungen
-![Wohnungen](docs/screenshots/wohnungen.png)
-
-### Vertraege
-![Vertraege](docs/screenshots/vertraege.png)
-
-### Darlehen
-![Darlehen](docs/screenshots/darlehen.png)
-
-### Darlehen — Tilgungsplan
-![Darlehen Tilgungsplan](docs/screenshots/darlehen_detail.png)
-
-### Bankkonten
-![Bankkonten](docs/screenshots/bankkonten.png)
-
-## DocTypes
-
-| DocType | Beschreibung |
-|---------|-------------|
-| `Fahrzeug` | KFZ-Verwaltung |
-| `Wohnung` | Immobilien |
-| `Bankkonto` | Girokonten / Sparkonten |
-| `Bankbuchung` | Ein-/Ausgaben mit Kategorie |
-| `Darlehen` | Kredite und Hypotheken |
-| `Vertrag` | Abonnements und Vertraege |
-| `Abschreibung` | Wertverlust-Tracking |
-| `Budgetposten` | Monatliche Soll-Budgets |
-
-## Tech Stack
-
-- **Backend:** Python 3 / Frappe Framework
-- **Frontend:** Vue 3 + Vite (SPA via Frappe www-Route)
-- **Charts:** Chart.js
-- **UI:** frappe-ui Komponenten + eigene
-- **Datenbank:** MariaDB (via Frappe ORM)
-- **HTTPS:** nginx mit self-signed Cert (Port 443), Port 80/2024 -> Redirect
+- Frappe v15 Bench
+- Python 3.10+
+- Node.js 18+
+- MariaDB 10.6+
 
 ## Installation
 
-### Voraussetzungen
-- Frappe Bench (v15+)
-- Node.js 18+
-- Python 3.10+
-
-### App installieren
 ```bash
-cd /home/erpnext/frappe-bench
-bench get-app ktesis https://github.com/ManuelDell/ktesis.git
-bench --site development install-app ktesis
-bench migrate
+cd frappe-bench
+bench get-app ktesis git@github.com:ManuelDell/ktesis.git
+bench --site <deine-site> install-app ktesis
+bench --site <deine-site> migrate
+cd apps/ktesis/frontend && npm install && npm run build
 ```
 
-Der `install-app`-Befehl baut das Frontend automatisch (`npm install && npm run build`).
-Voraussetzung: Node.js und npm sind auf dem System installiert.
+## Frontend bauen
 
-### Frontend live (mit HMR)
 ```bash
 cd apps/ktesis/frontend
-npm run dev
+./node_modules/.bin/vite build
 ```
 
-### HTTPS einrichten (optional)
-```bash
-sudo bench setup-ktesis-https --site development
-```
-Generiert self-signed Zertifikat und nginx-Konfiguration fuer Port 443. Alle HTTP-Routen werden auf HTTPS umgeleitet.
+## KI-Einstellungen
 
-**Bekannte Einschraenkungen:**
-- Self-signed: Browser zeigt Zertifikatswarnung — kein Let's Encrypt, keine CA
-- IP-gebunden: Zertifikat gilt fuer eine feste IP; bei IP-Wechsel neu generieren
-- Development only: Fuer oeffentliche Server Let's Encrypt + Domain verwenden
+Unter **Einstellungen** kann ein OpenAI-kompatibler LLM-API-Endpunkt konfiguriert werden (z.B. OpenCode Go `https://opencode.ai/zen/go/v1`). Ohne API-Key erfolgt ein Keyword-Fallback.
 
-### App oeffnen
-Das Ktesis-Icon erscheint auf dem Frappe Desk. Direkt erreichbar unter: `https://<deine-site>/ktesis`
+## CSV-Import
 
-## API
+Unterstützte Formate: DKB, Sparkasse, ING, Comdirect, Commerzbank, Deutsche Bank, N26, Trade Republic.
 
-Alle Endpunkte via `frappe.whitelist()` erreichbar:
+## Sicherheit
 
-### Dashboard & Auswertungen
-| Endpoint | Beschreibung |
-|----------|-------------|
-| `ktesis.api.dashboard.get_finance_summary` | Vermoegensuebersicht-Kacheln |
-| `ktesis.api.dashboard.get_buchungen_verlauf` | Monatliche Ein-/Ausgaben (Chart) |
-| `ktesis.api.dashboard.get_budget_vs_ist` | Soll-Ist-Vergleich |
-| `ktesis.api.dashboard.get_vertraege_mit_fristen` | Vertraege mit Ampel-Status |
-| `ktesis.api.dashboard.get_monatsuebersicht` | Monatliche Uebersicht |
-| `ktesis.api.dashboard.get_vermoegensentwicklung` | Nettovermoegen-Berechnung |
-| `ktesis.api.dashboard.get_dashboard_stats` | KPI-Zahlen (Counts, Salden) |
+- Alle Endpunkte erfordern einen eingeloggten Frappe-User (`@frappe.whitelist()`)
+- Guest-Zugriff ist nicht möglich
+- Empfohlen: hinter NGINX mit HTTPS betreiben (siehe `nginx.conf`-Beispiel in Frappe-Docs)
 
-### CSV-Import
-| Endpoint | Beschreibung |
-|----------|-------------|
-| `ktesis.api.csv_import.preview_csv` | CSV-Vorschau (5 Zeilen) |
-| `ktesis.api.csv_import.import_bankbuchungen` | CSV-Import mit Duplikat-Check |
+## FinTS
 
-### CRUD-Endpunkte
-| DocType | Endpunkte |
-|---------|-----------|
-| Fahrzeug | `get_vehicles` * `create_vehicle` * `update_vehicle` * `delete_vehicle` |
-| Wohnung | `get_properties` * `create_property` * `update_property` * `delete_property` |
-| Vertrag | `get_contracts` * `create_contract` * `update_contract` * `delete_contract` |
-| Darlehen | `get_loans` * `create_loan` * `update_loan` * `delete_loan` * `calculate_amortization_schedule` |
-| Bankkonto | `get_bank_accounts` * `create_bank_account` * `update_bank_account` * `delete_bank_account` * `get_buchungen` |
-
-### Anhaenge
-| Endpoint | Beschreibung |
-|----------|-------------|
-| `ktesis.api.attachments.get_attachments` | Datei-Anhaenge zu einem Dokument |
-| `ktesis.api.attachments.delete_attachment` | Anhang loeschen |
-
-### FinTS (experimentell)
-| Endpoint | Beschreibung |
-|----------|-------------|
-| `ktesis.api.fints.get_bank_list` | Unterstuetzte Banken |
-| `ktesis.api.fints.start_fints_sync` | FinTS-Synchronisation starten |
-| `ktesis.api.fints.get_fints_sync_status` | Sync-Status abfragen |
-| `ktesis.api.fints.submit_tan` | TAN einreichen |
-
-## Frontend-Views
-
-| View | Pfad | Beschreibung |
-|------|------|-------------|
-| Dashboard | `/` | KPI-Kacheln, Charts, Tilgungsrechner |
-| Fahrzeuge | `/fahrzeuge` | Liste & Detail Fahrzeuge |
-| Wohnungen | `/wohnungen` | Liste & Detail Immobilien |
-| Bankkonten | `/bankkonten` | Konten, Buchungen, CSV-Import |
-| Vertraege | `/vertraege` | Vertragsliste mit Ampel & Kuendigungsfristen |
-| Darlehen | `/darlehen` | Darlehensliste & Tilgungsplan |
-| Budget | `/budget` | Budgetposten & Soll-Ist-Vergleich |
+FinTS-Integration ist vorbereitet aber deaktiviert (kein Produktions-Schlüssel). Wird in einer späteren Version aktiviert.
 
 ## Lizenz
 
-MIT — siehe [license.txt](./license.txt)
+MIT

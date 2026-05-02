@@ -199,26 +199,24 @@
                 class="py-2 px-3 text-right"
                 :class="(m.kategorien.find(k => k.kategorie === kat)?.ueberschritten) ? 'text-ink-red-4 font-medium' : 'text-ink-gray-6'"
               >
-                {{ formatCurrency(Math.abs(m.kategorien.find(k => k.kategorie === kat)?.ist || 0)) }}
+                {{ formatCurrency(m.kategorien.find(k => k.kategorie === kat)?.ist || 0) }}
               </td>
               <td class="py-2 px-3 text-right font-semibold text-ink-gray-8">
-                {{ formatCurrency(Math.abs(jahresData.reduce((sum, m) => sum + (m.kategorien.find(k => k.kategorie === kat)?.ist || 0), 0))) }}
+                {{ formatCurrency(jahresData.reduce((sum, m) => sum + (m.kategorien.find(k => k.kategorie === kat)?.ist || 0), 0)) }}
               </td>
             </tr>
             <!-- Gesamt-Zeile -->
             <tr class="border-t-2 border-outline-gray-3 bg-surface-gray-1 font-semibold">
-              <td class="py-2 px-3 text-ink-gray-8 sticky left-0 bg-surface-gray-1">Saldo</td>
+              <td class="py-2 px-3 text-ink-gray-8 sticky left-0 bg-surface-gray-1">Gesamt</td>
               <td
                 v-for="m in jahresData"
                 :key="m.monat"
-                class="py-2 px-3 text-right font-semibold"
-                :class="m.kategorien.reduce((s,k)=>s+(k.ist||0),0) >= 0 ? 'text-ink-green-3' : 'text-ink-red-4'"
+                class="py-2 px-3 text-right text-ink-gray-8"
               >
-                {{ formatCurrency(m.kategorien.reduce((s,k)=>s+(k.ist||0),0)) }}
+                {{ formatCurrency(m.kategorien.reduce((sum, k) => sum + (k.ist || 0), 0)) }}
               </td>
-              <td class="py-2 px-3 text-right font-bold"
-                :class="jahresData.reduce((sum,m)=>sum+m.kategorien.reduce((s,k)=>s+(k.ist||0),0),0) >= 0 ? 'text-ink-green-3' : 'text-ink-red-4'">
-                {{ formatCurrency(jahresData.reduce((sum,m)=>sum+m.kategorien.reduce((s,k)=>s+(k.ist||0),0),0)) }}
+              <td class="py-2 px-3 text-right text-ink-gray-9">
+                {{ formatCurrency(jahresData.reduce((sum, m) => sum + m.kategorien.reduce((s, k) => s + (k.ist || 0), 0), 0)) }}
               </td>
             </tr>
           </tbody>

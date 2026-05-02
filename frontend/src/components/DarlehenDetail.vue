@@ -51,6 +51,7 @@
             <FormControl v-model.number="form.darlehensbetrag" type="number" label="Darlehensbetrag" />
             <FormControl v-model.number="form.zinssatz" type="number" label="Zinssatz (%)" />
             <FormControl v-model.number="form.tilgungssatz" type="number" label="Tilgungssatz (%)" />
+            <FormControl v-model.number="form.sondertilgungssatz" type="number" label="Sondertilgung erlaubt (% p.a.)" min="0" max="100" step="0.5" />
             <FormControl v-model.number="form.monatliche_rate" type="number" label="Monatliche Rate" />
           </div>
           <div class="space-y-4">
@@ -227,6 +228,7 @@ const form = reactive({
   darlehensbetrag: null,
   zinssatz: null,
   tilgungssatz: null,
+  sondertilgungssatz: null,
   monatliche_rate: null,
   rate_inkl_zins_tilgung: true,
   laufzeit_jahre: null,
@@ -253,6 +255,7 @@ onMounted(async () => {
         darlehensbetrag: data.darlehensbetrag ?? null,
         zinssatz: data.zinssatz ?? null,
         tilgungssatz: data.tilgungssatz ?? null,
+        sondertilgungssatz: data.sondertilgungssatz ?? null,
         monatliche_rate: data.monatliche_rate ?? null,
         rate_inkl_zins_tilgung: data.rate_inkl_zins_tilgung ?? true,
         laufzeit_jahre: data.laufzeit_jahre ?? null,

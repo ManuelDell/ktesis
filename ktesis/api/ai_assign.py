@@ -259,3 +259,12 @@ def get_ki_models(api_url: str = None, api_key: str = None) -> dict:
         frappe.throw(_(f"HTTP Error {e.code}: {e.reason}"))
     except Exception as e:
         frappe.throw(_(f"Verbindungsfehler: {e}"))
+
+
+@frappe.whitelist()
+def delete_all_buchungen() -> dict:
+    """Löscht ALLE Bankbuchungen. Nur für Admins."""
+    count = frappe.db.count("Bankbuchung")
+    frappe.db.sql("DELETE FROM `tabBankbuchung`")
+    frappe.db.commit()
+    return {"deleted": count}
