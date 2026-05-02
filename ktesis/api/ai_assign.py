@@ -129,3 +129,58 @@ def ai_assign_budgetposten(bankkonto: str = None) -> dict:
 
     frappe.db.commit()
     return {"assigned": assigned, "total": len(buchungen), "method": "ai"}
+
+@frappe.whitelist()
+def get_einstellungen() -> dict:
+    try:
+        doc = frappe.get_single("Ktesis Einstellungen")
+        return {
+            "ki_aktiv": int(doc.ki_aktiv or 0),
+            "ki_anbieter": doc.ki_anbieter or "opencode",
+            "ki_api_url": doc.ki_api_url or "",
+            "ki_modell": doc.ki_modell or "",
+        }
+    except Exception:
+        return {"ki_aktiv": 0, "ki_anbieter": "opencode", "ki_api_url": "", "ki_modell": ""}
+
+
+@frappe.whitelist()
+def save_einstellungen(ki_aktiv, ki_anbieter, ki_api_url, ki_api_key, ki_modell) -> dict:
+    doc = frappe.get_single("Ktesis Einstellungen")
+    doc.ki_aktiv = 1 if str(ki_aktiv) in ("1", "true", "True") else 0
+    doc.ki_anbieter = ki_anbieter or "opencode"
+    doc.ki_api_url = ki_api_url or ""
+    if ki_api_key:
+        doc.ki_api_key = ki_api_key
+    doc.ki_modell = ki_modell or ""
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True}
+
+
+@frappe.whitelist()
+def get_einstellungen() -> dict:
+    try:
+        doc = frappe.get_single("Ktesis Einstellungen")
+        return {
+            "ki_aktiv": int(doc.ki_aktiv or 0),
+            "ki_anbieter": doc.ki_anbieter or "opencode",
+            "ki_api_url": doc.ki_api_url or "",
+            "ki_modell": doc.ki_modell or "",
+        }
+    except Exception:
+        return {"ki_aktiv": 0, "ki_anbieter": "opencode", "ki_api_url": "", "ki_modell": ""}
+
+
+@frappe.whitelist()
+def save_einstellungen(ki_aktiv, ki_anbieter, ki_api_url, ki_api_key, ki_modell) -> dict:
+    doc = frappe.get_single("Ktesis Einstellungen")
+    doc.ki_aktiv = 1 if str(ki_aktiv) in ("1", "true", "True") else 0
+    doc.ki_anbieter = ki_anbieter or "opencode"
+    doc.ki_api_url = ki_api_url or ""
+    if ki_api_key:
+        doc.ki_api_key = ki_api_key
+    doc.ki_modell = ki_modell or ""
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"success": True}

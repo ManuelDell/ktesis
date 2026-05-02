@@ -124,12 +124,11 @@ function onAnbieterChange() {
 
 onMounted(async () => {
   try {
-    const doc = await call('frappe.client.get', { doctype: 'Ktesis Einstellungen', name: 'Ktesis Einstellungen' })
+    const doc = await call('ktesis.api.ai_assign.get_einstellungen')
     if (doc) {
       form.value.ki_aktiv = !!doc.ki_aktiv
       form.value.ki_anbieter = doc.ki_anbieter || 'opencode'
-      form.value.ki_api_url = doc.ki_api_url || ANBIETER_DEFAULTS.opencode.url
-      form.value.ki_api_key = doc.ki_api_key || ''
+      form.value.ki_api_url = doc.ki_api_url || ANBIETER_DEFAULTS[doc.ki_anbieter || 'opencode']?.url || ''
       form.value.ki_modell = doc.ki_modell || ''
     }
   } catch (e) {
@@ -142,16 +141,12 @@ async function save() {
   saved.value = false
   saveError.value = null
   try {
-    await call('frappe.client.set_value', {
-      doctype: 'Ktesis Einstellungen',
-      name: 'Ktesis Einstellungen',
-      fieldname: {
-        ki_aktiv: form.value.ki_aktiv ? 1 : 0,
-        ki_anbieter: form.value.ki_anbieter,
-        ki_api_url: form.value.ki_api_url,
-        ki_api_key: form.value.ki_api_key,
-        ki_modell: form.value.ki_modell,
-      },
+    await call('ktesis.api.ai_assign.save_einstellungen', {
+      ki_aktiv: form.value.ki_aktiv ? 1 : 0,
+      ki_anbieter: form.value.ki_anbieter,
+      ki_api_url: form.value.ki_api_url,
+      ki_api_key: form.value.ki_api_key,
+      ki_modell: form.value.ki_modell,
     })
     saved.value = true
     setTimeout(() => { saved.value = false }, 3000)
