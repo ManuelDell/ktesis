@@ -145,15 +145,14 @@ def get_einstellungen() -> dict:
 
 
 @frappe.whitelist()
-def save_einstellungen(ki_aktiv, ki_anbieter, ki_api_url, ki_api_key, ki_modell) -> dict:
-    doc = frappe.get_single("Ktesis Einstellungen")
-    doc.ki_aktiv = 1 if str(ki_aktiv) in ("1", "true", "True") else 0
-    doc.ki_anbieter = ki_anbieter or "opencode"
-    doc.ki_api_url = ki_api_url or ""
+def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_key=None, ki_modell=None):
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_aktiv",
+        1 if str(ki_aktiv or "0") in ("1", "true", "True") else 0)
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_anbieter", ki_anbieter or "opencode")
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_url", ki_api_url or "")
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_modell", ki_modell or "")
     if ki_api_key:
-        doc.ki_api_key = ki_api_key
-    doc.ki_modell = ki_modell or ""
-    doc.save(ignore_permissions=True)
+        frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_key", ki_api_key)
     frappe.db.commit()
     return {"success": True}
 
@@ -173,14 +172,13 @@ def get_einstellungen() -> dict:
 
 
 @frappe.whitelist()
-def save_einstellungen(ki_aktiv, ki_anbieter, ki_api_url, ki_api_key, ki_modell) -> dict:
-    doc = frappe.get_single("Ktesis Einstellungen")
-    doc.ki_aktiv = 1 if str(ki_aktiv) in ("1", "true", "True") else 0
-    doc.ki_anbieter = ki_anbieter or "opencode"
-    doc.ki_api_url = ki_api_url or ""
+def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_key=None, ki_modell=None):
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_aktiv",
+        1 if str(ki_aktiv or "0") in ("1", "true", "True") else 0)
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_anbieter", ki_anbieter or "opencode")
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_url", ki_api_url or "")
+    frappe.db.set_single_value("Ktesis Einstellungen", "ki_modell", ki_modell or "")
     if ki_api_key:
-        doc.ki_api_key = ki_api_key
-    doc.ki_modell = ki_modell or ""
-    doc.save(ignore_permissions=True)
+        frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_key", ki_api_key)
     frappe.db.commit()
     return {"success": True}
