@@ -7,13 +7,14 @@ from frappe import _
 def _get_settings() -> dict:
     """Load KI settings from KtesisEinstellungen Single DocType."""
     try:
-        doc = frappe.get_single("Ktesis Einstellungen")
+        d = frappe.db.get_singles_dict("Ktesis Einstellungen")
+        aktiv = str(d.get("ki_aktiv") or "0") in ("1", "1.0", "true", "True")
         return {
-            "aktiv": doc.ki_aktiv,
-            "anbieter": doc.ki_anbieter or "opencode",
-            "api_url": doc.ki_api_url or "https://opencode.ai/zen/go/v1",
-            "api_key": doc.ki_api_key or "",
-            "modell": doc.ki_modell or "kimi-k2.6",
+            "aktiv": aktiv,
+            "anbieter": d.get("ki_anbieter") or "opencode",
+            "api_url": d.get("ki_api_url") or "https://opencode.ai/zen/go/v1",
+            "api_key": d.get("ki_api_key") or "",
+            "modell": d.get("ki_modell") or "kimi-k2.6",
         }
     except Exception:
         return {"aktiv": False}
@@ -133,12 +134,12 @@ def ai_assign_budgetposten(bankkonto: str = None) -> dict:
 @frappe.whitelist()
 def get_einstellungen() -> dict:
     try:
-        doc = frappe.get_single("Ktesis Einstellungen")
+        d = frappe.db.get_singles_dict("Ktesis Einstellungen")
         return {
-            "ki_aktiv": int(doc.ki_aktiv or 0),
-            "ki_anbieter": doc.ki_anbieter or "opencode",
-            "ki_api_url": doc.ki_api_url or "",
-            "ki_modell": doc.ki_modell or "",
+            "ki_aktiv": 1 if str(d.get("ki_aktiv") or "0") in ("1", "1.0", "true", "True") else 0,
+            "ki_anbieter": d.get("ki_anbieter") or "opencode",
+            "ki_api_url": d.get("ki_api_url") or "",
+            "ki_modell": d.get("ki_modell") or "",
         }
     except Exception:
         return {"ki_aktiv": 0, "ki_anbieter": "opencode", "ki_api_url": "", "ki_modell": ""}
@@ -160,12 +161,12 @@ def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_
 @frappe.whitelist()
 def get_einstellungen() -> dict:
     try:
-        doc = frappe.get_single("Ktesis Einstellungen")
+        d = frappe.db.get_singles_dict("Ktesis Einstellungen")
         return {
-            "ki_aktiv": int(doc.ki_aktiv or 0),
-            "ki_anbieter": doc.ki_anbieter or "opencode",
-            "ki_api_url": doc.ki_api_url or "",
-            "ki_modell": doc.ki_modell or "",
+            "ki_aktiv": 1 if str(d.get("ki_aktiv") or "0") in ("1", "1.0", "true", "True") else 0,
+            "ki_anbieter": d.get("ki_anbieter") or "opencode",
+            "ki_api_url": d.get("ki_api_url") or "",
+            "ki_modell": d.get("ki_modell") or "",
         }
     except Exception:
         return {"ki_aktiv": 0, "ki_anbieter": "opencode", "ki_api_url": "", "ki_modell": ""}
