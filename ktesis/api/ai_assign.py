@@ -51,7 +51,7 @@ def _classify_batch(texts: list[str], kategorien: list[str], settings: dict) -> 
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0,
-        "max_tokens": 512,
+        "max_tokens": 1024,
     }).encode("utf-8")
 
     req = urllib.request.Request(
@@ -67,7 +67,8 @@ def _classify_batch(texts: list[str], kategorien: list[str], settings: dict) -> 
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
-        content = data["choices"][0]["message"]["content"].strip()
+        msg = data["choices"][0]["message"]
+        content = (msg.get("content") or msg.get("reasoning") or "").strip()
         # Extract JSON array from response (may have markdown fences)
         start = content.find("[")
         end = content.rfind("]") + 1
@@ -189,9 +190,10 @@ def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_
 def get_ki_models(api_url=None, api_key=None):
     """Fetch available models from OpenAI-compatible API."""
     import urllib.request as urlreq
+    d = frappe.db.get_singles_dict("Ktesis Einstellungen")
     if not api_url:
-        d = frappe.db.get_singles_dict("Ktesis Einstellungen")
         api_url = d.get("ki_api_url") or "https://opencode.ai/zen/go/v1"
+    if not api_key:
         api_key = d.get("ki_api_key") or ""
     base = api_url.rstrip("/")
     req = urlreq.Request(
