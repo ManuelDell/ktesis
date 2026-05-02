@@ -59,17 +59,37 @@
 
           <div>
             <label class="block text-sm font-medium text-ink-gray-7 mb-1">Modell</label>
-            <input
-              v-model="form.ki_modell"
-              type="text"
-              class="w-full border border-outline-gray-2 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              :placeholder="modelPlaceholder"
-            />
+            <div class="flex gap-2">
+              <select
+                v-if="availableModels.length"
+                v-model="form.ki_modell"
+                class="flex-1 border border-outline-gray-2 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">— Modell wählen —</option>
+                <option v-for="m in availableModels" :key="m" :value="m">{{ m }}</option>
+              </select>
+              <input
+                v-else
+                v-model="form.ki_modell"
+                type="text"
+                class="flex-1 border border-outline-gray-2 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :placeholder="modelPlaceholder"
+              />
+              <Button variant="outline" theme="gray" :loading="loadingModels" @click="loadModels" title="Modelle von API laden">
+                <FeatherIcon name="refresh-cw" class="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </template>
       </div>
 
       <div class="flex items-center gap-3 mt-5">
+        <Button variant="outline" theme="gray" :loading="testing" @click="testConnection">
+          <span class="flex items-center gap-2">
+            <FeatherIcon name="zap" class="w-4 h-4" />
+            Verbindung testen
+          </span>
+        </Button>
         <Button variant="solid" theme="gray" :loading="saving" @click="save">
           <span class="flex items-center gap-2">
             <FeatherIcon name="save" class="w-4 h-4" />
@@ -80,6 +100,7 @@
           <FeatherIcon name="check" class="w-4 h-4" />
           Gespeichert
         </span>
+        <span v-if="testResult" class="text-sm" :class="testResult.startsWith('✓') ? 'text-ink-green-4' : 'text-ink-red-4'">{{ testResult }}</span>
         <span v-if="saveError" class="text-sm text-ink-red-4">{{ saveError }}</span>
       </div>
     </div>
@@ -105,6 +126,10 @@ const form = ref({
 const saving = ref(false)
 const saved = ref(false)
 const saveError = ref(null)
+const availableModels = ref([])
+const loadingModels = ref(false)
+const testing = ref(false)
+const testResult = ref(null)
 
 const ANBIETER_DEFAULTS = {
   opencode: { url: 'https://opencode.ai/zen/go/v1', modell: 'kimi-k2.6' },
@@ -135,6 +160,40 @@ onMounted(async () => {
     // Doc doesn't exist yet, use defaults
   }
 })
+
+async function loadModels() {
+  loadingModels.value = true
+  availableModels.value = []
+  try {
+    const models = await call('ktesis.api.ai_assign.get_ki_models', {
+      api_url: form.value.ki_api_url,
+      api_key: form.value.ki_api_key,
+    })
+    availableModels.value = models || []
+  } catch (e) {
+    saveError.value = 'Modelle laden fehlgeschlagen: ' + (e.message || e)
+  } finally {
+    loadingModels.value = false
+  }
+}
+
+async function testConnection() {
+  testing.value = true
+  testResult.value = null
+  saveError.value = null
+  try {
+    const models = await call('ktesis.api.ai_assign.get_ki_models', {
+      api_url: form.value.ki_api_url,
+      api_key: form.value.ki_api_key,
+    })
+    testResult.value = `✓ Verbindung OK — ${(models || []).length} Modelle verfügbar`
+    availableModels.value = models || []
+  } catch (e) {
+    testResult.value = '✗ ' + (e.message || 'Verbindung fehlgeschlagen')
+  } finally {
+    testing.value = false
+  }
+}
 
 async function save() {
   saving.value = true

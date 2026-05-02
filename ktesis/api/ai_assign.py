@@ -183,3 +183,26 @@ def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_
         frappe.db.set_single_value("Ktesis Einstellungen", "ki_api_key", ki_api_key)
     frappe.db.commit()
     return {"success": True}
+
+
+@frappe.whitelist()
+def get_ki_models(api_url=None, api_key=None):
+    """Fetch available models from OpenAI-compatible API."""
+    import urllib.request as urlreq
+    if not api_url:
+        d = frappe.db.get_singles_dict("Ktesis Einstellungen")
+        api_url = d.get("ki_api_url") or "https://opencode.ai/zen/go/v1"
+        api_key = d.get("ki_api_key") or ""
+    base = api_url.rstrip("/")
+    req = urlreq.Request(
+        f"{base}/models",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="GET",
+    )
+    try:
+        with urlreq.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        models = [m.get("id") or m.get("name") for m in data.get("data", data.get("models", []))]
+        return sorted(m for m in models if m)
+    except Exception as e:
+        frappe.throw(str(e))
