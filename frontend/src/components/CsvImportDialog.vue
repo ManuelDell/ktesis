@@ -168,6 +168,7 @@ const result = ref(null)
 const budgetposten = ref([])
 const bankkontoList = ref([])
 const selectedBankkonto = ref(props.bankkonto || '')
+const effectiveBankkonto = computed(() => selectedBankkonto.value || props.bankkonto || '')
 
 const newRows = computed(() => allRows.value.filter(r => !r.duplicate))
 const dupRows = computed(() => allRows.value.filter(r => r.duplicate))
@@ -224,7 +225,7 @@ function processFile(file) {
         content = await tryRead('ISO-8859-1')
       }
       const res = await call('ktesis.api.csv_import.preview_csv', {
-        bankkonto: selectedBankkonto.value,
+        bankkonto: effectiveBankkonto.value,
         csv_content: content,
       })
       allRows.value = res.rows || []
@@ -246,7 +247,7 @@ async function doImport() {
   importing.value = true
   try {
     const res = await call('ktesis.api.csv_import.import_bankbuchungen_rows', {
-      bankkonto: selectedBankkonto.value,
+      bankkonto: effectiveBankkonto.value,
       rows: JSON.stringify(allRows.value),
     })
     result.value = res

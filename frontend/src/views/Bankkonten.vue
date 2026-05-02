@@ -97,12 +97,6 @@
               Auto-zuordnen
             </span>
           </Button>
-          <Button variant="outline" theme="gray" size="md" @click="openImport(listData.find(i => i.name === selectedName) || { name: selectedName })">
-            <span class="flex items-center gap-2 whitespace-nowrap">
-              <FeatherIcon name="upload" class="w-4 h-4" />
-              Buchungen importieren
-            </span>
-          </Button>
         </div>
         <div v-if="buchungenLoading" class="text-center py-8 text-ink-gray-4">Lade Buchungen...</div>
         <div v-else-if="buchungen.length === 0" class="text-center py-8 text-ink-gray-4">
@@ -152,12 +146,20 @@
 
     <!-- Detail-Modus / Neuanlage-Modus -->
     <template v-else>
-      <Button variant="outline" theme="gray" size="md" @click="backToList">
-        <span class="flex items-center gap-2 whitespace-nowrap">
-          <FeatherIcon name="arrow-left" class="w-4 h-4" />
-          Zurück
-        </span>
-      </Button>
+      <div class="flex items-center gap-3 mb-4">
+        <Button variant="outline" theme="gray" size="md" @click="backToList">
+          <span class="flex items-center gap-2 whitespace-nowrap">
+            <FeatherIcon name="arrow-left" class="w-4 h-4" />
+            Zurück
+          </span>
+        </Button>
+        <Button v-if="selectedName && !isNew" variant="outline" theme="gray" size="md" @click="openImport({ name: selectedName })">
+          <span class="flex items-center gap-2 whitespace-nowrap">
+            <FeatherIcon name="upload" class="w-4 h-4" />
+            Buchungen importieren
+          </span>
+        </Button>
+      </div>
       <BankkontoDetail
         :name="isNew ? null : selectedName"
         @close="backToList"
