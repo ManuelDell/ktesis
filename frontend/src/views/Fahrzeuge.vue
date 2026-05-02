@@ -86,9 +86,11 @@
 
     <!-- Detail-Modus / Neuanlage-Modus -->
     <template v-else>
-      <Button variant="outline" theme="gray" @click="backToList">
-        <FeatherIcon name="arrow-left" class="w-4 h-4" />
-        Zurück
+      <Button variant="outline" theme="gray" size="md" @click="backToList">
+        <span class="flex items-center gap-2 whitespace-nowrap">
+          <FeatherIcon name="arrow-left" class="w-4 h-4" />
+          Zurück
+        </span>
       </Button>
       <FahrzeugDetail
         :name="isNew ? null : selectedName"

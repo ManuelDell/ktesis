@@ -21,7 +21,7 @@ sys.modules['frappe'] = frappe_mock
 sys.modules['frappe.utils'] = utils_mock
 
 # 2. Datei einlesen und den SyntaxError-Block durch No-Op ersetzen
-csv_path = '/home/erpnext/frappe-bench/apps/ktesis/ktesis/api/csv_import.py'
+csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "api", "csv_import.py")
 with open(csv_path) as f:
     source = f.read()
 

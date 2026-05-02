@@ -86,10 +86,18 @@
 
       <!-- Buchungsliste -->
       <div class="mt-8">
-        <h3 class="text-lg font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
-          <FeatherIcon name="list" class="w-4 h-4 text-ink-gray-5" />
-          Buchungen
-        </h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-ink-gray-9 flex items-center gap-2">
+            <FeatherIcon name="list" class="w-4 h-4 text-ink-gray-5" />
+            Buchungen
+          </h3>
+          <Button variant="outline" theme="gray" size="md" @click="openImport(listData.find(i => i.name === selectedName) || { name: selectedName })">
+            <span class="flex items-center gap-2 whitespace-nowrap">
+              <FeatherIcon name="upload" class="w-4 h-4" />
+              Buchungen importieren
+            </span>
+          </Button>
+        </div>
         <div v-if="buchungenLoading" class="text-center py-8 text-ink-gray-4">Lade Buchungen...</div>
         <div v-else-if="buchungen.length === 0" class="text-center py-8 text-ink-gray-4">
           Keine Buchungen vorhanden.
@@ -127,9 +135,11 @@
 
     <!-- Detail-Modus / Neuanlage-Modus -->
     <template v-else>
-      <Button variant="outline" theme="gray" @click="backToList">
-        <FeatherIcon name="arrow-left" class="w-4 h-4" />
-        Zurück
+      <Button variant="outline" theme="gray" size="md" @click="backToList">
+        <span class="flex items-center gap-2 whitespace-nowrap">
+          <FeatherIcon name="arrow-left" class="w-4 h-4" />
+          Zurück
+        </span>
       </Button>
       <BankkontoDetail
         :name="isNew ? null : selectedName"

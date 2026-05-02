@@ -54,7 +54,7 @@
           fileTypes=".pdf,.jpg,.jpeg,.png,.doc,.docx"
         >
           <template #default="{ openFileSelector, uploading, progress }">
-            <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="sm">
+            <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md">
               <FeatherIcon name="upload" class="w-4 h-4 mr-2" />
               {{ uploading ? `Upload ${progress}%` : 'Datei hochladen' }}
             </Button>
