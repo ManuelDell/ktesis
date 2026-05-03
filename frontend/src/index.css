@@ -9,7 +9,8 @@ html {
   font-feature-settings: 'calt' 1, 'cv01' 1, 'cv03' 1, 'cv04' 1, 'cv11' 1;
 }
 html, body, #app { height: 100%; overflow: hidden; }
-body { -webkit-tap-highlight-color: transparent; margin: 0; }
+html, body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; }
 
 /* Warme Graustufen + Brand Colors */
 :root {
@@ -105,6 +106,8 @@ body { -webkit-tap-highlight-color: transparent; margin: 0; }
   flex: 1;
   overflow-y: auto;
   background: var(--surface-white);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .kt-screen {

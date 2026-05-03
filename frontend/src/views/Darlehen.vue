@@ -41,7 +41,7 @@
         <div
           v-for="item in filteredList"
           :key="item.name"
-          class="bg-surface-white border border-[var(--outline-gray-2)] rounded-lg p-4 cursor-pointer transition-all hover:border-outline-gray-4 hover:shadow-sm group"
+          class="bg-surface-white border border-[var(--outline-gray-2)] rounded-lg p-4 cursor-pointer transition-all sm:hover:border-outline-gray-4 sm:hover:shadow-sm active:border-outline-gray-4 active:shadow-sm group"
         >
           <div class="flex items-start justify-between">
             <div @click="openDetail(item.name)" class="flex-1 min-w-0">

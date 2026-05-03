@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5">
+  <div class="px-3 sm:px-5 py-5">
     <!-- Listen-Modus -->
     <template v-if="!selectedName">
       <!-- Top-Bereich -->
@@ -51,7 +51,7 @@
         <div
           v-for="item in filteredList"
           :key="item.name"
-          class="bg-surface-white border border-[var(--outline-gray-2)] rounded-lg p-4 cursor-pointer transition-all hover:border-outline-gray-4 hover:shadow-sm group"
+          class="bg-surface-white border border-[var(--outline-gray-2)] rounded-lg p-4 cursor-pointer transition-all sm:hover:border-outline-gray-4 sm:hover:shadow-sm active:border-outline-gray-4 active:shadow-sm group"
         >
           <div class="flex items-start justify-between">
             <div @click="openDetail(item.name)" class="flex-1 min-w-0">
@@ -70,21 +70,21 @@
             <div class="flex items-center gap-2">
               <button
                 @click.stop="openImport(item)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-blue-4 hover:bg-surface-blue-1 transition-all "
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-blue-4 sm:hover:bg-surface-blue-1 active:bg-surface-blue-1 transition-all "
                 title="Kontoauszug importieren"
               >
                 <FeatherIcon name="upload" class="w-4 h-4" />
               </button>
               <button
                 @click.stop="openDetail(item.name)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all "
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 sm:hover:bg-surface-gray-2 active:bg-surface-gray-2 transition-all "
                 title="Bearbeiten"
               >
                 <FeatherIcon name="edit-2" class="w-4 h-4" />
               </button>
               <button
                 @click.stop="confirmDelete(item)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all "
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 sm:hover:bg-surface-red-1 active:bg-surface-red-1 transition-all "
                 title="Löschen"
               >
                 <FeatherIcon name="trash-2" class="w-4 h-4" />
@@ -160,7 +160,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="b in buchungen" :key="b.name" class="border-b border-outline-gray-1 hover:bg-surface-gray-2">
+              <tr v-for="b in buchungen" :key="b.name" class="border-b border-outline-gray-1 sm:hover:bg-surface-gray-2 active:bg-surface-gray-2">
                 <td class="py-2 px-3">
                   <input type="checkbox" :checked="selectedBuchungen.has(b.name)" @change="toggleSelect(b.name)" class="rounded" />
                 </td>
@@ -189,14 +189,14 @@
                   <div class="flex items-center gap-1 justify-center">
                     <button
                       @click.stop="openKontoWechsel(b)"
-                      class="p-1.5 rounded text-ink-gray-4 hover:text-ink-blue-4 hover:bg-surface-blue-1 transition-all"
+                      class="p-1.5 rounded text-ink-gray-4 hover:text-ink-blue-4 sm:hover:bg-surface-blue-1 active:bg-surface-blue-1 transition-all"
                       title="Konto wechseln"
                     >
                       <FeatherIcon name="repeat" class="w-3 h-3" />
                     </button>
                     <button
                       @click.stop="confirmDeleteBuchung(b)"
-                      class="p-1.5 rounded text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all"
+                      class="p-1.5 rounded text-ink-gray-4 hover:text-ink-red-4 sm:hover:bg-surface-red-1 active:bg-surface-red-1 transition-all"
                       title="Buchung löschen"
                     >
                       <FeatherIcon name="trash-2" class="w-3 h-3" />
@@ -215,7 +215,7 @@
               <button
                 @click="goToPage(currentPage - 1)"
                 :disabled="currentPage === 1"
-                class="p-1.5 rounded hover:bg-surface-gray-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                class="p-1.5 rounded sm:hover:bg-surface-gray-2 active:bg-surface-gray-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <FeatherIcon name="chevron-left" class="w-4 h-4" />
               </button>
@@ -223,7 +223,7 @@
               <button
                 @click="goToPage(currentPage + 1)"
                 :disabled="currentPage === totalPages"
-                class="p-1.5 rounded hover:bg-surface-gray-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                class="p-1.5 rounded sm:hover:bg-surface-gray-2 active:bg-surface-gray-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <FeatherIcon name="chevron-right" class="w-4 h-4" />
               </button>

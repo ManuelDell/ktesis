@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5">
+  <div class="px-3 sm:px-5 py-5">
     <!-- Listen-Modus -->
     <template v-if="!selectedName">
       <!-- Top-Bereich -->
@@ -50,7 +50,7 @@
         <div
           v-for="item in filteredList"
           :key="item.name"
-          class="bg-surface-white border border-outline-gray-2 rounded-lg p-4 cursor-pointer transition-all hover:border-outline-gray-4 hover:shadow-sm group"
+          class="bg-surface-white border border-outline-gray-2 rounded-lg p-4 cursor-pointer transition-all sm:hover:border-outline-gray-4 sm:hover:shadow-sm active:border-outline-gray-4 active:shadow-sm group"
         >
           <div class="flex items-start justify-between">
             <div @click="openDetail(item.name)" class="flex-1 min-w-0">
@@ -87,14 +87,14 @@
               </Badge>
               <button
                 @click.stop="openDetail(item.name)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all "
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 sm:hover:bg-surface-gray-2 active:bg-surface-gray-2 transition-all "
                 title="Bearbeiten"
               >
                 <FeatherIcon name="edit-2" class="w-4 h-4" />
               </button>
               <button
                 @click.stop="confirmDelete(item)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all "
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 sm:hover:bg-surface-red-1 active:bg-surface-red-1 transition-all "
                 title="Löschen"
               >
                 <FeatherIcon name="trash-2" class="w-4 h-4" />

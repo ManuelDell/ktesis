@@ -17,6 +17,7 @@ declare module 'vue' {
     DkModal: typeof import('./src/components/DkModal.vue')['default']
     FahrzeugDetail: typeof import('./src/components/FahrzeugDetail.vue')['default']
     KachelCard: typeof import('./src/components/KachelCard.vue')['default']
+    MobileLayout: typeof import('./src/components/MobileLayout.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     VertragDetail: typeof import('./src/components/VertragDetail.vue')['default']

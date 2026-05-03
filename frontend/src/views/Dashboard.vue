@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-5xl w-full mx-auto p-5 pb-16 animate-[fadeIn_0.25s_ease]">
+  <div class="max-w-5xl w-full mx-auto py-5 px-3 sm:px-5 pb-16 animate-[fadeIn_0.25s_ease]">
     <h2 class="text-2xl font-semibold text-ink-gray-9 mb-6">Dashboard</h2>
 
     <!-- KPI-Karten -->
