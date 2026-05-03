@@ -170,12 +170,12 @@
         <div v-if="!isNew" class="border-t border-outline-gray-2 pt-5">
           <h4 class="text-sm font-medium text-ink-gray-7 mb-3">Anhänge</h4>
           <FileUploader
-            :uploadArgs="{ doctype: 'Wohnung', docname: props.name, is_private: 1 }"
+            :uploadArgs="{ doctype: 'Wohnung', docname: docname, is_private: 1 }"
             @success="onUploadSuccess"
-            fileTypes=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            fileTypes="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
           >
             <template #default="{ openFileSelector, uploading, progress }">
-              <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md">
+              <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md" class="touch-manipulation">
                 <span class="flex items-center gap-2 whitespace-nowrap">
                   <FeatherIcon name="upload" class="w-4 h-4" />
                   {{ uploading ? `Upload ${progress}%` : 'Datei hochladen' }}
@@ -183,7 +183,7 @@
               </Button>
             </template>
           </FileUploader>
-          <AttachmentList ref="attachmentList" doctype="Wohnung" :docname="props.name" />
+          <AttachmentList ref="attachmentList" doctype="Wohnung" :docname="docname" />
         </div>
 
         <!-- Error -->
@@ -256,7 +256,8 @@ const emit = defineEmits(['close', 'saved'])
 
 const { get, create, update, list, call } = useApi()
 
-const isNew = computed(() => !props.name)
+const docname = ref(props.name)
+const isNew = computed(() => !docname.value)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref(null)
@@ -380,9 +381,10 @@ async function handleSave() {
   try {
     const payload = { ...form }
     if (isNew.value) {
-      await create('Wohnung', payload)
+      const res = await create('Wohnung', payload)
+      docname.value = res.name
     } else {
-      await update('Wohnung', props.name, payload)
+      await update('Wohnung', docname.value, payload)
     }
     emit('saved')
   } catch (e) {

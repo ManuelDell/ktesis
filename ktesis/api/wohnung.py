@@ -70,3 +70,21 @@ def delete_property(name):
 	"""Delete a Wohnung document."""
 	frappe.get_doc("Wohnung", name).delete()
 	return {"status": "ok"}
+
+
+@frappe.whitelist()
+def get_wohnungen_liste():
+	"""Return simple list of properties for dropdowns."""
+	properties = frappe.get_all(
+		"Wohnung",
+		fields=["name", "bezeichnung", "ort"]
+	)
+	return {
+		"items": [
+			{
+				"value": p.name,
+				"label": f"{p.bezeichnung or ''} ({p.ort or p.name})".strip()
+			}
+			for p in properties
+		]
+	}

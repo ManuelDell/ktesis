@@ -69,14 +69,14 @@
               </span>
               <button
                 @click.stop="openDetail(item.name)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all md:opacity-0 md:group-hover:opacity-100"
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all "
                 title="Bearbeiten"
               >
                 <FeatherIcon name="edit-2" class="w-4 h-4" />
               </button>
               <button
                 @click.stop="confirmDelete(item)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all md:opacity-0 md:group-hover:opacity-100"
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all "
                 title="Löschen"
               >
                 <FeatherIcon name="trash-2" class="w-4 h-4" />

@@ -70,8 +70,8 @@
                 {{ item.vertragstyp || '—' }} · {{ item.vertragspartner || '—' }}
               </div>
               <div class="mt-2 text-sm">
-                <span class="text-gray-500">Kosten monatlich:</span>
-                <span class="ml-1 font-medium">{{ formatCurrency(item.kosten_monatlich) }}</span>
+                <span class="text-gray-500">Kosten:</span>
+                <span class="ml-1 font-medium">{{ kostenAnzeige(item) }}</span>
                 <span v-if="ampelMap[item.name]?.naechste_kuendigungsfrist" class="ml-3 text-xs text-ink-gray-5">
                   Frist: {{ ampelMap[item.name].naechste_kuendigungsfrist }}
                 </span>
@@ -87,14 +87,14 @@
               </Badge>
               <button
                 @click.stop="openDetail(item.name)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all md:opacity-0 md:group-hover:opacity-100"
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-gray-7 hover:bg-surface-gray-2 transition-all "
                 title="Bearbeiten"
               >
                 <FeatherIcon name="edit-2" class="w-4 h-4" />
               </button>
               <button
                 @click.stop="confirmDelete(item)"
-                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all md:opacity-0 md:group-hover:opacity-100"
+                class="p-1.5 rounded-lg text-ink-gray-4 hover:text-ink-red-4 hover:bg-surface-red-1 transition-all "
                 title="Löschen"
               >
                 <FeatherIcon name="trash-2" class="w-4 h-4" />
@@ -195,6 +195,15 @@ function formatCurrency(value) {
     currency: 'EUR',
     minimumFractionDigits: 2,
   }).format(value)
+}
+
+function kostenAnzeige(v) {
+  const m = v.kosten_monatlich || (v.kosten_jaehrlich ? v.kosten_jaehrlich / 12 : null)
+  const j = v.kosten_jaehrlich || (v.kosten_monatlich ? v.kosten_monatlich * 12 : null)
+  if (m && j) return `${formatCurrency(m)}/Mo · ${formatCurrency(j)}/J`
+  if (m) return `${formatCurrency(m)}/Mo`
+  if (j) return `${formatCurrency(j)}/J`
+  return '—'
 }
 
 const filteredList = computed(() => {

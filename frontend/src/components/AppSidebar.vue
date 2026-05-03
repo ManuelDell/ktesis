@@ -1,6 +1,6 @@
 <template>
   <!-- Sidebar -->
-  <aside class="kt-sidebar" :class="{ 'is-collapsed': collapsed }">
+  <aside class="kt-sidebar" :class="{ 'is-collapsed': collapsed, 'is-open': mobileOpen }">
 
     <!-- Top: Brand + Collapse -->
     <div class="kt-sb-top">
@@ -73,6 +73,7 @@ import { currentPageName } from '../router.js'
 
 const props = defineProps({
  collapsed: Boolean,
+ mobileOpen: Boolean,
  theme: String,
 })
 const emit = defineEmits(['toggle-collapse', 'toggle-theme', 'logout', 'close-mobile'])

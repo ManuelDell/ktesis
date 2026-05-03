@@ -66,3 +66,21 @@ def delete_vehicle(name):
 	"""Delete a Fahrzeug document."""
 	frappe.get_doc("Fahrzeug", name).delete()
 	return {"status": "ok"}
+
+
+@frappe.whitelist()
+def get_fahrzeuge_liste():
+	"""Return simple list of vehicles for dropdowns."""
+	vehicles = frappe.get_all(
+		"Fahrzeug",
+		fields=["name", "kennzeichen", "marke", "modell"]
+	)
+	return {
+		"items": [
+			{
+				"value": v.name,
+				"label": f"{v.marke or ''} {v.modell or ''} ({v.kennzeichen or v.name})".strip()
+			}
+			for v in vehicles
+		]
+	}

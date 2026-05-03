@@ -93,7 +93,7 @@
         </div>
 
         <!-- Alle Anhänge -->
-        <AttachmentList ref="attachmentList" doctype="Fahrzeug" :docname="props.name" />
+        <AttachmentList ref="attachmentList" doctype="Fahrzeug" :docname="docname" />
       </div>
 
       <!-- Error -->
@@ -134,7 +134,8 @@ const emit = defineEmits(['close', 'saved'])
 
 const { get, create, update } = useApi()
 
-const isNew = computed(() => !props.name)
+const docname = ref(props.name)
+const isNew = computed(() => !docname.value)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref(null)
@@ -200,9 +201,10 @@ async function handleSave() {
   try {
     const payload = { ...form }
     if (isNew.value) {
-      await create('Fahrzeug', payload)
+      const res = await create('Fahrzeug', payload)
+      docname.value = res.name
     } else {
-      await update('Fahrzeug', props.name, payload)
+      await update('Fahrzeug', docname.value, payload)
     }
     emit('saved')
   } catch (e) {

@@ -83,7 +83,7 @@
               >
                 {{ v.message }}
               </Badge>
-              <span class="text-xs font-medium text-ink-gray-6">{{ fmtEuro(v.kosten_monatlich || v.kosten_jaehrlich) }}</span>
+              <span class="text-xs font-medium text-ink-gray-6">{{ kostenAnzeige(v) }}</span>
             </div>
           </div>
         </div>
@@ -154,7 +154,7 @@
               <p class="font-medium text-ink-gray-9 text-sm truncate">{{ v.titel }}</p>
               <p class="text-xs text-ink-gray-5">{{ v.vertragstyp }} · {{ v.vertragspartner || '—' }}</p>
             </div>
-            <p class="font-semibold text-ink-gray-9 text-sm flex-shrink-0">{{ fmtEuro(v.kosten_monatlich || v.kosten_jaehrlich) }}</p>
+            <p class="font-semibold text-ink-gray-9 text-sm flex-shrink-0">{{ kostenAnzeige(v) }}</p>
           </div>
         </div>
       </div>
@@ -261,6 +261,15 @@ const maxSondertilgungMonatlich = computed(() => {
 function fmtEuro(n) {
   if (n == null) return '-'
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(n)
+}
+
+function kostenAnzeige(v) {
+  const m = v.kosten_monatlich || (v.kosten_jaehrlich ? v.kosten_jaehrlich / 12 : null)
+  const j = v.kosten_jaehrlich || (v.kosten_monatlich ? v.kosten_monatlich * 12 : null)
+  if (m && j) return `${fmtEuro(m)}/Mo · ${fmtEuro(j)}/J`
+  if (m) return `${fmtEuro(m)}/Mo`
+  if (j) return `${fmtEuro(j)}/J`
+  return '—'
 }
 
 function ampelCardClass(color) {

@@ -27,7 +27,14 @@
             :options="['Versicherung','Darlehen','Miete','Kaufvertrag','Wartung','Sonstiges']" />
           <FormControl v-model="form.referenz_doctype" type="select" label="Referenz Typ"
             :options="['Fahrzeug','Wohnung']" />
-          <FormControl v-model="form.referenz_name" type="text" label="Referenz" />
+          <div>
+            <label class="block text-sm font-medium text-ink-gray-7 mb-1">Referenz</label>
+            <select v-model="form.referenz_name" :disabled="!form.referenz_doctype"
+              class="w-full border border-outline-gray-2 rounded-lg px-3 py-2 text-sm text-ink-gray-9 bg-white focus:outline-none focus:ring-2 focus:ring-outline-gray-4 disabled:bg-surface-gray-2 disabled:text-ink-gray-4">
+              <option value="">-- Bitte wählen --</option>
+              <option v-for="opt in referenzOptionen" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
           <FormControl v-model="form.vertragspartner" type="text" label="Vertragspartner" />
           <FormControl v-model="form.vertragsnummer" type="text" label="Vertragsnummer" />
           <FormControl v-model="form.vertragsbeginn" type="date" label="Vertragsbeginn" />
@@ -49,18 +56,18 @@
       <div v-if="!isNew" class="border-t border-outline-gray-2 pt-5">
         <h4 class="text-sm font-medium text-ink-gray-7 mb-3">Anhänge</h4>
         <FileUploader
-          :uploadArgs="{ doctype: 'Vertrag', docname: props.name, is_private: 1 }"
+          :uploadArgs="{ doctype: 'Vertrag', docname: docname, is_private: 1 }"
           @success="onUploadSuccess"
-          fileTypes=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          fileTypes="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
         >
           <template #default="{ openFileSelector, uploading, progress }">
-            <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md">
+            <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="md" class="touch-manipulation">
               <FeatherIcon name="upload" class="w-4 h-4 mr-2" />
               {{ uploading ? `Upload ${progress}%` : 'Datei hochladen' }}
             </Button>
           </template>
         </FileUploader>
-        <AttachmentList ref="attachmentList" doctype="Vertrag" :docname="props.name" />
+        <AttachmentList ref="attachmentList" doctype="Vertrag" :docname="docname" />
       </div>
 
       <!-- Error -->
@@ -87,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { FileUploader } from 'frappe-ui'
 import { useApi } from '../composables/useApi.js'
 import AttachmentList from './AttachmentList.vue'
@@ -101,11 +108,13 @@ const emit = defineEmits(['close', 'saved'])
 
 const { get, create, update } = useApi()
 
-const isNew = computed(() => !props.name)
+const docname = ref(props.name)
+const isNew = computed(() => !docname.value)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref(null)
 const attachmentList = ref(null)
+const referenzOptionen = ref([])
 
 const form = reactive({
   titel: '',
@@ -122,6 +131,54 @@ const form = reactive({
   zahlungsrhythmus: '',
   notizen: '',
   aktiv: true,
+})
+
+async function ladeReferenzOptionen() {
+  if (!form.referenz_doctype) {
+    referenzOptionen.value = []
+    return
+  }
+  try {
+    let url
+    if (form.referenz_doctype === 'Fahrzeug') {
+      url = '/api/method/ktesis.api.fahrzeug.get_fahrzeuge_liste'
+    } else if (form.referenz_doctype === 'Wohnung') {
+      url = '/api/method/ktesis.api.wohnung.get_wohnungen_liste'
+    } else {
+      referenzOptionen.value = []
+      return
+    }
+    const res = await fetch(url, {
+      headers: { 'X-Frappe-CSRF-Token': window.csrf_token || '' }
+    })
+    const data = await res.json()
+    if (data.message && data.message.items) {
+      referenzOptionen.value = data.message.items
+    } else {
+      referenzOptionen.value = []
+    }
+  } catch (e) {
+    referenzOptionen.value = []
+  }
+}
+
+watch(() => form.referenz_doctype, async (neu, alt) => {
+  if (neu !== alt) {
+    form.referenz_name = ''
+    await ladeReferenzOptionen()
+  }
+})
+
+watch(() => form.kosten_monatlich, (val) => {
+  if (val && !form.kosten_jaehrlich) {
+    form.kosten_jaehrlich = Math.round(val * 12 * 100) / 100
+  }
+})
+
+watch(() => form.kosten_jaehrlich, (val) => {
+  if (val && !form.kosten_monatlich) {
+    form.kosten_monatlich = Math.round(val / 12 * 100) / 100
+  }
 })
 
 onMounted(async () => {
@@ -145,6 +202,9 @@ onMounted(async () => {
         notizen: data.notizen || '',
         aktiv: data.aktiv ?? true,
       })
+      if (form.referenz_doctype) {
+        await ladeReferenzOptionen()
+      }
     } catch (e) {
       error.value = 'Fehler beim Laden der Vertragsdaten.'
     } finally {
@@ -163,9 +223,10 @@ async function handleSave() {
   try {
     const payload = { ...form }
     if (isNew.value) {
-      await create('Vertrag', payload)
+      const res = await create('Vertrag', payload)
+      docname.value = res.name
     } else {
-      await update('Vertrag', props.name, payload)
+      await update('Vertrag', docname.value, payload)
     }
     emit('saved')
   } catch (e) {

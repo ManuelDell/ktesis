@@ -1,14 +1,18 @@
 <template>
   <div class="kt-app" :class="{ 'is-collapsed': sidebarCollapsed }" :data-theme="theme">
+    <!-- Mobile backdrop -->
+    <div v-if="mobileOpen" class="fixed inset-0 z-40 bg-black/50 md:hidden" @click="mobileOpen = false" />
     <AppSidebar
       :collapsed="sidebarCollapsed"
+      :mobileOpen="mobileOpen"
       :theme="theme"
-      @toggle-collapse="sidebarCollapsed = !sidebarCollapsed"
+      @toggle-collapse="handleToggleCollapse"
       @toggle-theme="toggleTheme"
       @logout="handleLogout"
+      @close-mobile="mobileOpen = false"
     />
     <div class="kt-main-wrap">
-      <AppTopbar :title="pageTitle" :collapsed="sidebarCollapsed" @toggle-collapse="sidebarCollapsed = !sidebarCollapsed" />
+      <AppTopbar :title="pageTitle" :collapsed="sidebarCollapsed" @toggle-collapse="handleToggleCollapse" />
       <div class="kt-content">
         <!-- Session loading state -->
         <div v-if="sessionLoading" class="kt-screen kt-screen-enter text-center text-ink-gray-4" style="display:flex;align-items:center;justify-content:center;min-height:300px;">
@@ -38,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import AppSidebar from './components/AppSidebar.vue'
 import AppTopbar from './components/AppTopbar.vue'
 import { currentComponent, currentPageName } from './router.js'
@@ -47,6 +51,7 @@ import { useSession } from './composables/useSession.js'
 const { user, loading: sessionLoading, isLoggedIn, fetchSession, logout } = useSession()
 
 const sidebarCollapsed = ref(false)
+const mobileOpen = ref(false)
 const theme = ref(localStorage.getItem('kt-theme') || 'light')
 
 const pageTitle = computed(() => {
@@ -60,6 +65,14 @@ const pageTitle = computed(() => {
   }
   return map[currentPageName.value] || 'Ktesis'
 })
+
+function handleToggleCollapse() {
+  if (window.innerWidth < 768) {
+    mobileOpen.value = !mobileOpen.value
+  } else {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+}
 
 function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
@@ -77,6 +90,8 @@ function goToLogin() {
 onMounted(() => {
   fetchSession()
 })
+
+watch(currentPageName, () => { mobileOpen.value = false })
 </script>
 
 <style>
