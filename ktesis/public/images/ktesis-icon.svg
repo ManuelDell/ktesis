@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Background: cream rounded square (iOS squircle via clip) -->
+  <rect width="200" height="200" rx="44" ry="44" fill="#FAF3EA"/>
+
+  <!-- House body: terracotta -->
+  <polygon points="20,200 20,95 100,40 180,95 180,200" fill="#B5451B"/>
+
+  <!-- Roof shadow side (right, golden/amber) -->
+  <polygon points="100,40 180,95 180,82 100,28" fill="#C07830"/>
+
+  <!-- Chimney -->
+  <rect x="48" y="68" width="20" height="32" fill="#B5451B"/>
+
+  <!-- White K letter -->
+  <text x="62" y="175"
+        font-family="Georgia, 'Times New Roman', serif"
+        font-size="110"
+        font-weight="700"
+        fill="#FAF3EA"
+        letter-spacing="-2">K</text>
+</svg>

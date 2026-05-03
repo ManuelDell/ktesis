@@ -3,7 +3,7 @@
     <h2 class="text-2xl font-semibold text-ink-gray-9 mb-6">Dashboard</h2>
 
     <!-- KPI-Karten -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <KachelCard label="Fahrzeuge" :value="stats.fahrzeuge" icon="truck" type="count" />
       <KachelCard label="Wohnungen" :value="stats.wohnungen" icon="home" type="count" />
       <KachelCard label="Aktive Verträge" :value="stats.aktive_vertraege" icon="file-text" type="count" />
@@ -16,7 +16,7 @@
     <!-- Vermögensübersicht -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
       <!-- Nettovermögen Karte -->
-      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5 lg:col-span-1">
+      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5 lg:col-span-1">
         <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
           <FeatherIcon name="pie-chart" class="w-4 h-4 text-ink-gray-5" />
           Vermögen
@@ -49,7 +49,7 @@
       </div>
 
       <!-- Vertrags-Ampel -->
-      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5 lg:col-span-2">
+      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5 lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-base font-semibold text-ink-gray-9 flex items-center gap-2">
             <FeatherIcon name="alert-circle" class="w-4 h-4 text-ink-gray-5" />
@@ -93,7 +93,7 @@
     <!-- Finance Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
       <!-- Bankkonten -->
-      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5">
+      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5">
         <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
           <FeatherIcon name="credit-card" class="w-4 h-4 text-ink-gray-5" />
           Bankkonten
@@ -111,7 +111,7 @@
       </div>
 
       <!-- Darlehen -->
-      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5">
+      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5">
         <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
           <FeatherIcon name="dollar-sign" class="w-4 h-4 text-ink-gray-5" />
           Darlehen
@@ -132,44 +132,40 @@
       </div>
 
       <!-- Vertragskosten -->
-      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5">
+      <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5">
         <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
           <FeatherIcon name="file-text" class="w-4 h-4 text-ink-gray-5" />
           Vertragskosten
         </h3>
-        <div v-if="finance.vertragskosten" class="mb-3 pb-3 border-b border-outline-gray-1">
-          <div class="flex justify-between text-sm">
-            <span class="text-ink-gray-5">Monatlich</span>
-            <span class="font-medium text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.monatlich) }}</span>
-          </div>
-          <div class="flex justify-between text-sm mt-1">
-            <span class="text-ink-gray-5">Jährlich</span>
-            <span class="font-medium text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.jaehrlich) }}</span>
-          </div>
-        </div>
-        <div class="space-y-0">
-          <div v-for="v in vertraege.slice(0, 5)" :key="v.name"
-            class="flex justify-between items-center py-2 border-b border-outline-gray-1 last:border-0">
-            <div class="min-w-0">
-              <p class="font-medium text-ink-gray-9 text-sm truncate">{{ v.titel }}</p>
-              <p class="text-xs text-ink-gray-5">{{ v.vertragstyp }} · {{ v.vertragspartner || '—' }}</p>
+        <div v-if="finance.vertragskosten" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs text-ink-gray-5 mb-0.5">Monatliche Belastung</p>
+              <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.monatlich) }}</p>
             </div>
-            <p class="font-semibold text-ink-gray-9 text-sm flex-shrink-0">{{ kostenAnzeige(v) }}</p>
+            <div class="text-right">
+              <p class="text-xs text-ink-gray-5 mb-0.5">Jährliche Belastung</p>
+              <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.jaehrlich) }}</p>
+            </div>
           </div>
+          <p class="text-xs text-ink-gray-4">Summe aller laufenden Verträge</p>
         </div>
+        <div v-else class="text-sm text-ink-gray-4">Keine Vertragskosten erfasst</div>
       </div>
     </div>
     <!-- Einnahmen / Ausgaben Chart -->
-    <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5 mt-5">
+    <div class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5 mt-5">
       <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
         <FeatherIcon name="bar-chart-2" class="w-4 h-4 text-ink-gray-5" />
         Einnahmen & Ausgaben (12 Monate)
       </h3>
-      <canvas ref="chartCanvas" height="120"></canvas>
+      <div class="relative h-52 sm:h-40">
+        <canvas ref="chartCanvas"></canvas>
+      </div>
     </div>
 
     <!-- Was-wäre-wenn Tilgungsrechner -->
-    <div v-if="finance.darlehen && finance.darlehen.length" class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-5 mt-5">
+    <div v-if="finance.darlehen && finance.darlehen.length" class="bg-white border border-outline-gray-2 rounded-lg shadow-sm p-3 sm:p-5 mt-5">
       <h3 class="text-base font-semibold text-ink-gray-9 mb-4 flex items-center gap-2">
         <FeatherIcon name="sliders" class="w-4 h-4 text-ink-gray-5" />
         Was wäre wenn? — Sondertilgung
@@ -335,8 +331,8 @@ onMounted(async () => {
         data: {
           labels: verlaufData.map(r => r.label),
           datasets: [
-            { label: 'Einnahmen', data: verlaufData.map(r => r.einnahmen), backgroundColor: 'rgba(34,197,94,0.6)', borderRadius: 4 },
-            { label: 'Ausgaben', data: verlaufData.map(r => r.ausgaben), backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4 },
+            { label: 'Einnahmen', data: verlaufData.map(r => r.einnahmen), backgroundColor: 'rgba(34,197,94,0.6)', borderRadius: 4, order: 1, },
+            { label: 'Ausgaben', data: verlaufData.map(r => Math.abs(r.ausgaben)), backgroundColor: 'rgba(239,68,68,0.6)', borderRadius: 4, order: 1, },
             {
               type: 'line',
               label: 'Trend Einnahmen',
@@ -346,22 +342,27 @@ onMounted(async () => {
               borderWidth: 2,
               pointRadius: 3,
               tension: 0.4,
-              order: 0,
+              order: 2,
             },
             {
               type: 'line',
               label: 'Trend Ausgaben',
-              data: movingAvg(verlaufData.map(r => r.ausgaben)),
+              data: movingAvg(verlaufData.map(r => Math.abs(r.ausgaben))),
               borderColor: 'rgba(239,68,68,0.9)',
               backgroundColor: 'transparent',
               borderWidth: 2,
               pointRadius: 3,
               tension: 0.4,
-              order: 0,
+              order: 2,
             },
           ],
         },
-        options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } } },
+          scales: { y: { beginAtZero: true } }
+        },
       })
     }
   } catch (e) { console.error('Chart error:', e) }

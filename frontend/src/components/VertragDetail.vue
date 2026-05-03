@@ -67,6 +67,10 @@
             </Button>
           </template>
         </FileUploader>
+        <div v-if="uploadSuccess" class="flex items-center gap-1.5 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-2 transition-all">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  Datei erfolgreich hochgeladen
+                </div>
         <AttachmentList ref="attachmentList" doctype="Vertrag" :docname="docname" />
       </div>
 
@@ -114,6 +118,7 @@ const loading = ref(false)
 const saving = ref(false)
 const error = ref(null)
 const attachmentList = ref(null)
+const uploadSuccess = ref(false)
 const referenzOptionen = ref([])
 
 const form = reactive({
@@ -213,8 +218,16 @@ onMounted(async () => {
   }
 })
 
-function onUploadSuccess() {
-  attachmentList.value?.reload()
+async function onUploadSuccess(file) {
+  if (file && attachmentList.value?.addFile) {
+    attachmentList.value.addFile(file)
+  } else {
+    await new Promise(r => setTimeout(r, 800))
+    attachmentList.value?.reload()
+  }
+  uploadSuccess.value = true
+  setTimeout(() => { uploadSuccess.value = false }, 2500)
+  setTimeout(() => attachmentList.value?.reload(), 1500)
 }
 
 async function handleSave() {

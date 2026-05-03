@@ -124,5 +124,12 @@ onMounted(loadAttachments)
 
 watch(() => props.docname, loadAttachments)
 
-defineExpose({ reload: loadAttachments })
+defineExpose({
+  reload: loadAttachments,
+  addFile(file) {
+    if (file && !files.value.find(f => f.name === file.name)) {
+      files.value.unshift(file)
+    }
+  }
+})
 </script>

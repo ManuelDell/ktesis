@@ -6,11 +6,14 @@
     <div class="kt-sb-top">
       <a href="#/" class="kt-sb-brand" @click="$emit('close-mobile')">
         <div class="kt-sb-logo">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-           <polyline points="9 22 9 12 15 12 15 22"/>
-         </svg>
-       </div>
+          <svg width="26" height="26" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" style="border-radius:6px;display:block;flex-shrink:0">
+            <rect width="200" height="200" rx="44" ry="44" fill="#FAF3EA"/>
+            <polygon points="20,200 20,95 100,40 180,95 180,200" fill="#B5451B"/>
+            <polygon points="100,40 180,95 180,82 100,28" fill="#C07830"/>
+            <rect x="48" y="68" width="20" height="32" fill="#B5451B"/>
+            <text x="62" y="175" font-family="Georgia,serif" font-size="110" font-weight="700" fill="#FAF3EA">K</text>
+          </svg>
+        </div>
        <div v-if="!collapsed" class="kt-sb-brand-text">
           <span class="kt-sb-brand-name">Ktesis</span>
           
