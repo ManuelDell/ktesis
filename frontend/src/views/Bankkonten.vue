@@ -157,7 +157,8 @@
           <button @click="selectedBuchungen = new Set()" class="text-xs text-ink-gray-4 hover:text-ink-gray-7">Auswahl aufheben</button>
         </div>
         <div v-else class="bg-white border border-outline-gray-2 rounded-lg shadow-sm overflow-hidden">
-          <table class="w-full text-sm border-collapse">
+          <div class="overflow-x-auto w-full -mx-0">
+          <table class="w-full text-sm border-collapse min-w-[700px]">
             <thead>
               <tr class="border-b border-outline-gray-2">
                 <th class="py-3 px-3 w-8">
@@ -219,6 +220,7 @@
               </tr>
             </tbody>
           </table>
+        </div>
           <!-- Pagination -->
           <div v-if="totalPages > 1" class="flex items-center justify-between px-4 py-3 border-t border-outline-gray-1">
             <span class="text-xs text-ink-gray-5">
@@ -550,7 +552,9 @@ async function quickAssign(buchung, budgetpostenName) {
 
   const empfaenger = extractEmpfaenger(buchung.buchungstext)
   if (empfaenger && empfaenger.length > 2) {
-    suggestPattern(empfaenger, budgetpostenName)
+    const bp = alleBudgetposten.value.find(b => b.name === budgetpostenName)
+    const label = bp?.kategorie || budgetpostenName
+    suggestPattern(empfaenger, budgetpostenName, label)
   }
 }
 
@@ -559,9 +563,9 @@ function onMehrSelect(buchung, e) {
   if (val) { quickAssign(buchung, val); e.target.value = '' }
 }
 
-function suggestPattern(empfaenger, budgetpostenName) {
+function suggestPattern(empfaenger, budgetpostenName, label) {
   const pattern = empfaenger.toUpperCase().split(' ')[0]
-  if (confirm(`Immer "${pattern}" → ${budgetpostenName} zuordnen?`)) {
+  if (confirm(`Immer "${pattern}" → ${label || budgetpostenName} zuordnen?`)) {
     call('ktesis.api.buchungsregel.create_buchungsregel', {
       empfaenger_pattern: pattern + '*',
       budgetposten: budgetpostenName

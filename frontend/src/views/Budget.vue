@@ -115,7 +115,8 @@
           <div v-if="!editableBudgets.length" class="text-center py-6 text-ink-gray-4 text-sm">
             Noch keine Budgettöpfe. Erstelle deinen ersten!
           </div>
-          <table v-else class="w-full text-sm">
+          <div v-else class="overflow-x-auto w-full">
+          <table class="min-w-[500px] w-full text-sm">
             <thead>
               <tr class="border-b border-outline-gray-2">
                 <th class="text-left py-2 px-3 font-medium text-ink-gray-5">Name</th>
@@ -165,6 +166,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </template>
@@ -176,7 +178,7 @@
       </div>
       <div v-if="!jahresData.length" class="text-center py-8 text-ink-gray-4">Lade...</div>
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-xs">
+        <table class="min-w-[700px] w-full text-xs">
           <thead class="bg-surface-gray-1">
             <tr>
               <th class="text-left py-2 px-3 font-medium text-ink-gray-5 sticky left-0 bg-surface-gray-1">Kategorie</th>
