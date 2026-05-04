@@ -269,6 +269,7 @@ Chart.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale
 import { FeatherIcon, Badge } from 'frappe-ui'
 import KachelCard from '../components/KachelCard.vue'
 import { useApi } from '../composables/useApi.js'
+import { useAuth } from '../composables/useAuth.js'
 
 const stats = ref({
   fahrzeuge: 0, wohnungen: 0, aktive_vertraege: 0,
@@ -432,6 +433,8 @@ onMounted(async () => {
       call('ktesis.api.dashboard.get_vermoegensentwicklung'),
     ])
     stats.value = statsData
+    const { setAdminStatus } = useAuth()
+    setAdminStatus(statsData?.is_ktesis_admin)
     finance.value = financeData
     vermoegen.value = vermoegenData
   } catch (e) { console.error('Dashboard load error:', e) }

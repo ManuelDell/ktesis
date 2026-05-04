@@ -145,11 +145,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watchEffect } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { useApi } from '../composables/useApi'
+import { useAuth } from '../composables/useAuth.js'
+import { navigate } from '../router.js'
 
 const { call } = useApi()
+
+const { isKtesisAdmin, authLoaded } = useAuth()
+watchEffect(() => {
+  if (authLoaded.value && !isKtesisAdmin.value) {
+    navigate('/')
+  }
+})
 
 const form = ref({
   ki_aktiv: false,

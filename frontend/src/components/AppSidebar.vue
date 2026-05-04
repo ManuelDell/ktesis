@@ -32,7 +32,7 @@
      <NavItem href="#/darlehen" icon="dollar-sign" label="Darlehen" :active="page === 'Darlehen'" :collapsed="collapsed" />
     <NavItem href="#/bankkonten" icon="credit-card" label="Bankkonten" :active="page === 'Bankkonten'" :collapsed="collapsed" />
     <NavItem href="#/budget" icon="bar-chart-2" label="Budget" :active="page === 'Budget'" :collapsed="collapsed" />
-    <NavItem href="#/einstellungen" icon="settings" label="Einstellungen" :active="page === 'Einstellungen'" :collapsed="collapsed" />
+    <NavItem v-if="isKtesisAdmin" href="#/einstellungen" icon="settings" label="Einstellungen" :active="page === 'Einstellungen'" :collapsed="collapsed" />
   </nav>
 
    <!-- Footer -->
@@ -72,7 +72,10 @@
 
 <script setup>
 import { ref, computed, h } from 'vue'
+import { useAuth } from '../composables/useAuth.js'
 import { currentPageName } from '../router.js'
+
+const { isKtesisAdmin } = useAuth()
 
 const props = defineProps({
  collapsed: Boolean,

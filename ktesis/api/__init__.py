@@ -25,7 +25,9 @@ def get_dashboard_stats():
         SELECT COALESCE(SUM(kosten_monatlich), 0) FROM `tabVertrag` WHERE aktiv = 1
     """)[0][0] or 0
 
+    from ktesis.api.auth import is_ktesis_admin as _is_admin
     return {
+        "is_ktesis_admin": _is_admin(),
         "fahrzeuge": fahrzeuge,
         "wohnungen": wohnungen,
         "aktive_vertraege": aktive_vertraege,

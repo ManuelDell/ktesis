@@ -225,6 +225,9 @@ def get_einstellungen() -> dict:
 
 @frappe.whitelist()
 def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_key=None, ki_modell=None):
+    from ktesis.api.auth import is_ktesis_admin
+    if not is_ktesis_admin():
+        frappe.throw(frappe._("Nur Ktesis Admin darf Einstellungen ändern"), frappe.PermissionError)
     frappe.db.set_single_value("Ktesis Einstellungen", "ki_aktiv",
         1 if str(ki_aktiv or "0") in ("1", "true", "True") else 0)
     frappe.db.set_single_value("Ktesis Einstellungen", "ki_anbieter", ki_anbieter or "opencode")
@@ -238,6 +241,16 @@ def save_einstellungen(ki_aktiv=None, ki_anbieter=None, ki_api_url=None, ki_api_
 
 @frappe.whitelist()
 def get_ki_models(api_url: str = None, api_key: str = None) -> dict:
+    from ktesis.api.auth import is_ktesis_admin
+    from urllib.parse import urlparse
+    if not is_ktesis_admin():
+        frappe.throw(frappe._("Nur Ktesis Admin"), frappe.PermissionError)
+    if api_url:
+        _host = urlparse(api_url).hostname or ""
+        _allowed = {"opencode.ai","api.openai.com","api.anthropic.com","api.mistral.ai",
+                    "generativelanguage.googleapis.com","localhost","127.0.0.1"}
+        if _host not in _allowed:
+            frappe.throw(frappe._("API-URL nicht erlaubt"), frappe.ValidationError)
     d = frappe.db.get_singles_dict("Ktesis Einstellungen")
     if not api_url:
         api_url = d.get("ki_api_url") or "https://opencode.ai/zen/go/v1"
@@ -263,8 +276,9 @@ def get_ki_models(api_url: str = None, api_key: str = None) -> dict:
 
 @frappe.whitelist()
 def delete_all_buchungen() -> dict:
-    if frappe.session.user == "Guest":
-        frappe.throw(_("Nicht autorisiert"), frappe.AuthenticationError)
+    from ktesis.api.auth import is_ktesis_admin
+    if not is_ktesis_admin():
+        frappe.throw(_("Nur Ktesis Admin darf alle Buchungen löschen"), frappe.PermissionError)
     count = frappe.db.count("Bankbuchung")
     frappe.db.sql("DELETE FROM `tabBankbuchung`")
     frappe.db.commit()
