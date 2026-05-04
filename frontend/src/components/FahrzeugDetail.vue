@@ -58,7 +58,7 @@
         <div>
           <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugschein (Zulassungsbescheinigung Teil I)</p>
           <FileUploader
-            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, is_private: 1, folder: 'fahrzeugschein' }"
+            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, private: 1 }"
             @success="onUploadSuccess"
             fileTypes=".pdf,.jpg,.jpeg,.png"
           >
@@ -81,7 +81,7 @@
         <div>
           <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugbrief (Zulassungsbescheinigung Teil II)</p>
           <FileUploader
-            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, is_private: 1, folder: 'fahrzeugbrief' }"
+            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, private: 1 }"
             @success="onUploadSuccess"
             fileTypes=".pdf,.jpg,.jpeg,.png"
           >

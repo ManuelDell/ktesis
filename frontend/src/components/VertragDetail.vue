@@ -56,7 +56,7 @@
       <div v-if="!isNew" class="border-t border-outline-gray-2 pt-5">
         <h4 class="text-sm font-medium text-ink-gray-7 mb-3">Anhänge</h4>
         <FileUploader
-          :uploadArgs="{ doctype: 'Vertrag', docname: docname, is_private: 1 }"
+          :uploadArgs="{ doctype: 'Vertrag', docname: docname, private: 1 }"
           @success="onUploadSuccess"
           fileTypes="image/*,application/pdf,.doc,.docx,.xls,.xlsx"
         >
