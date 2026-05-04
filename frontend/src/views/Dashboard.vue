@@ -10,7 +10,7 @@
       <KachelCard label="Bank-Saldo" :value="fmtEuro(stats.bank_saldo)" icon="credit-card" type="money" />
       <KachelCard label="Darlehen" :value="fmtEuro(stats.darlehensbetrag)" icon="dollar-sign" type="money" />
       <KachelCard label="Restschuld" :value="fmtEuro(stats.restschuld)" icon="trending-down" type="negative" />
-      <KachelCard label="Monatliche Kosten" :value="fmtEuro(stats.monatliche_kosten)" icon="euro" type="money" />
+      <KachelCard label="Monatliche Kosten" :value="fmtEuro(stats.monatliche_kosten)" icon="bar-chart-2" type="money" />
     </div>
 
     <!-- Vermögensübersicht -->
@@ -72,8 +72,8 @@
             :class="ampelCardClass(v.ampel)"
           >
             <div class="min-w-0">
-              <p class="text-sm font-medium">{{ v.titel }}</p>
-              <p class="text-xs text-ink-gray-5">{{ v.vertragstyp }} · {{ v.vertragspartner || '—' }}</p>
+              <p class="text-sm font-medium line-clamp-1">{{ v.titel }}</p>
+              <p class="text-xs text-ink-gray-5 line-clamp-1">{{ v.vertragstyp }} · {{ v.vertragspartner || '—' }}</p>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
               <Badge

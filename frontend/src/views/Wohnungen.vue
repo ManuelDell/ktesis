@@ -25,7 +25,7 @@
             placeholder="Suchen..." class="pl-10"
            />
         </div>
-        <Select v-model="filterStatus">
+        <Select v-model="filterStatus" placeholder="Alle Status">
           <option value="">Alle Status</option>
           <option value="Bewohnt">Bewohnt</option>
           <option value="Vermietet">Vermietet</option>
