@@ -10,7 +10,7 @@
       <KachelCard label="Bank-Saldo" :value="fmtEuro(stats.bank_saldo)" icon="credit-card" type="money" />
       <KachelCard label="Darlehen" :value="fmtEuro(stats.darlehensbetrag)" icon="dollar-sign" type="money" />
       <KachelCard label="Restschuld" :value="fmtEuro(stats.restschuld)" icon="trending-down" type="negative" />
-      <KachelCard label="Monatliche Kosten" :value="fmtEuro(stats.monatliche_kosten)" icon="bar-chart-2" type="money" />
+      <KachelCard label="Monatliche Kosten" :value="fmtEuro(stats.monatliche_kosten + savedSondertilgungenTotal)" icon="bar-chart-2" type="money" />
     </div>
 
     <!-- Vermögensübersicht -->
@@ -144,11 +144,11 @@
           <div class="flex items-center justify-between">
             <div>
               <p class="text-xs text-ink-gray-5 mb-0.5">Monatliche Belastung</p>
-              <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.monatlich) }}</p>
+              <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro((finance.vertragskosten.monatlich || 0) + savedSondertilgungenTotal) }}</p>
             </div>
             <div class="text-right">
               <p class="text-xs text-ink-gray-5 mb-0.5">Jährliche Belastung</p>
-              <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.jaehrlich) }}</p>
+              <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro((finance.vertragskosten.jaehrlich || 0) + savedSondertilgungenTotal * 12) }}</p>
             </div>
           </div>
           <div v-if="finance.vertragskosten.vertraege?.length" class="border-t border-outline-gray-1 pt-2 space-y-0">
@@ -163,6 +163,18 @@
                 <p class="text-xs text-ink-gray-4">{{ rhythmusKurz(v.zahlungsrhythmus) }}</p>
               </div>
             </div>
+            <template v-for="d in finance.darlehen" :key="'st-' + d.name">
+              <div v-if="getSavedSondertilgung(d.name) > 0" class="flex justify-between items-center py-2 border-b border-outline-gray-1 last:border-0 text-sm">
+                <div class="min-w-0">
+                  <p class="font-medium text-ink-gray-9">{{ d.bezeichnung }}</p>
+                  <p class="text-xs text-ink-gray-4">Sondertilgung (gespeichert)</p>
+                </div>
+                <div class="text-right shrink-0 ml-3">
+                  <p class="font-semibold text-ink-gray-9">{{ fmtEuro(getSavedSondertilgung(d.name)) }}</p>
+                  <p class="text-xs text-ink-gray-4">monatlich</p>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
         <div v-else class="text-sm text-ink-gray-4">Keine Vertragskosten erfasst</div>
@@ -276,6 +288,7 @@ let chartInstance = null
 const tilgungDarlehenIdx = ref(0)
 const extraTilgung = ref(0)
 const savedMsg = ref(false)
+const savedSondertilgungenTotal = ref(0)
 
 // Trendlinie berechnen (gleitender 3-Monats-Durchschnitt)
 function movingAvg(data, window = 3) {
@@ -315,6 +328,12 @@ function saveSondertilgung() {
   localStorage.setItem(sondertilgungKey(d.name), String(extraTilgung.value))
   savedMsg.value = true
   setTimeout(() => { savedMsg.value = false }, 2000)
+  computeSavedTotal()
+}
+
+function computeSavedTotal() {
+  const darlehen = finance.value?.darlehen || []
+  savedSondertilgungenTotal.value = darlehen.reduce((sum, d) => sum + getSavedSondertilgung(d.name), 0)
 }
 
 watch(tilgungDarlehenIdx, (newVal) => {
@@ -419,6 +438,7 @@ onMounted(async () => {
 
   // Lade gespeicherte Sondertilgung für das erste Darlehen
   loadSondertilgung(0)
+  computeSavedTotal()
 
   ampelLoading.value = true
   try {
