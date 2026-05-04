@@ -72,7 +72,7 @@
             :class="ampelCardClass(v.ampel)"
           >
             <div class="min-w-0">
-              <p class="text-sm font-medium truncate">{{ v.titel }}</p>
+              <p class="text-sm font-medium">{{ v.titel }}</p>
               <p class="text-xs text-ink-gray-5">{{ v.vertragstyp }} · {{ v.vertragspartner || '—' }}</p>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
@@ -152,7 +152,7 @@
             <div v-for="v in finance.vertragskosten.vertraege" :key="v.name"
               class="flex justify-between items-center py-2 border-b border-outline-gray-1 last:border-0 text-sm">
               <div class="min-w-0">
-                <p class="font-medium text-ink-gray-9 truncate">{{ v.titel }}</p>
+                <p class="font-medium text-ink-gray-9">{{ v.titel }}</p>
                 <p class="text-xs text-ink-gray-4">{{ faelligLabel(v) }}</p>
               </div>
               <div class="text-right shrink-0 ml-3">
@@ -271,17 +271,17 @@ function zahlungBetrag(v) {
   const kj = v.kosten_jaehrlich || 0
   switch (v.zahlungsrhythmus) {
     case 'Monatlich': return fmtEuro(km)
-    case 'Vierteljaehrlich': return fmtEuro(kj / 4)
-    case 'Halbjaehrlich': return fmtEuro(kj / 2)
-    case 'Jaehrlich': return fmtEuro(kj)
+    case 'Vierteljährlich': return fmtEuro(kj / 4)
+    case 'Halbjährlich': return fmtEuro(kj / 2)
+    case 'Jährlich': return fmtEuro(kj)
     case 'Einmalig': return fmtEuro(km || kj)
     default: return km ? fmtEuro(km) : fmtEuro(kj)
   }
 }
 
 function rhythmusKurz(r) {
-  const map = { 'Monatlich': 'monatlich', 'Vierteljaehrlich': 'quartalsweise',
-                'Halbjaehrlich': 'halbjährlich', 'Jaehrlich': 'jährlich', 'Einmalig': 'einmalig' }
+  const map = { 'Monatlich': 'monatlich', 'Vierteljährlich': 'vierteljährlich',
+                'Halbjährlich': 'halbjährlich', 'Jährlich': 'jährlich', 'Einmalig': 'einmalig' }
   return map[r] || r || ''
 }
 
@@ -292,12 +292,12 @@ function faelligLabel(v) {
   const mon = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
   const r = v.zahlungsrhythmus || ''
   if (r === 'Monatlich') return `${tag}. jeden Monat`
-  if (r === 'Jaehrlich') return `${tag}. ${mon[d.getUTCMonth()]}`
-  if (r === 'Vierteljaehrlich') {
+  if (r === 'Jährlich') return `${tag}. ${mon[d.getUTCMonth()]}`
+  if (r === 'Vierteljährlich') {
     const m = d.getUTCMonth()
     return `${tag}. ` + [0,1,2,3].map(i => mon[(m + i * 3) % 12]).join(' · ')
   }
-  if (r === 'Halbjaehrlich') {
+  if (r === 'Halbjährlich') {
     const m = d.getUTCMonth()
     return `${tag}. ${mon[m]} + ${mon[(m + 6) % 12]}`
   }
