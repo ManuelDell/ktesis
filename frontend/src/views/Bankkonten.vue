@@ -554,6 +554,11 @@ async function quickAssign(buchung, budgetpostenName) {
   }
 }
 
+function onMehrSelect(buchung, e) {
+  const val = e.target.value
+  if (val) { quickAssign(buchung, val); e.target.value = '' }
+}
+
 function suggestPattern(empfaenger, budgetpostenName) {
   const pattern = empfaenger.toUpperCase().split(' ')[0]
   if (confirm(`Immer "${pattern}" → ${budgetpostenName} zuordnen?`)) {
