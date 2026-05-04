@@ -113,12 +113,48 @@ def _classify_batch(texts: list, kategorien: list, settings: dict, beschreibunge
     tx_entries = ",\n".join(f'  "{i}": "{t}"' for i, t in enumerate(texts))
     tx_text = "{\n" + tx_entries + "\n}"
 
+    few_shots = """BEISPIELE (gelernte Muster):
+MIETE FEBRUAR 2026 → Wohnen
+Stadtwerke Strom → Wohnen
+GASAG ERDGAS ABSCHLAG → Wohnen
+RUNDFUNKBEITRAG ARD ZDF → Wohnen
+Tankstelle Shell → Mobilitaet
+BVG MONATSKARTE → Mobilitaet
+KFZ VERSICHERUNG HUK COBURG → Mobilitaet
+AOK KRANKENVERSICHERUNG → Versicherung
+DKV KRANKENVERSICHERUNG → Versicherung
+DEBEKA LEBENSVERSICHERUNG → Versicherung
+REWE Markt → Lebensmittel
+ROSSMANN GMBH → Lebensmittel
+DM DROGERIE MARKT → Lebensmittel
+PENNY MARKT → Lebensmittel
+Netflix → Freizeit
+SPOTIFY AB PREMIUM → Freizeit
+AMAZON PRIME → Freizeit
+RESTAURANT ZUR POST → Freizeit
+FITNESSSTUDIO MCFIT → Freizeit
+ZALANDO SE → Sonstiges
+AMAZON PAYMENTS → Sonstiges
+OTTO GMBH → Sonstiges
+VODAFONE GMBH → Sonstiges
+1UND1 INTERNET → Sonstiges
+Gehalt April Müller GmbH → Einkommen
+DIVIDENDE AKTIEN → Einkommen
+Tilgung Baufinanzierung → Tilgung"""
+
     prompt = (
-        f"Du bist ein Finanz-Kategorisierungsassistent. Ordne jede Transaktion einer Budgetkategorie zu.\n\n"
+        f"Du kategorisierst deutsche Bankbuchungen. Antworte NUR mit JSON.\n\n"
         f"KATEGORIEN:\n{kat_text}\n\n"
-        f"TRANSAKTIONEN (JSON mit Index als Key):\n{tx_text}\n\n"
-        f"Antworte NUR mit validem JSON: {{\"0\": \"Kategorie\", \"1\": \"Kategorie\", ...}}\n"
-        f"Nur Kategorienamen aus der obigen Liste verwenden. Kein sonstiger Text."
+        f"{few_shots}\n\n"
+        f"REGELN:\n"
+        f"- KFZ-Versicherung → Mobilitaet (nicht Versicherung)\n"
+        f"- Drogerie (DM, Rossmann) → Lebensmittel\n"
+        f"- Rundfunkbeitrag/GEZ → Wohnen\n"
+        f"- Amazon ohne Zusatz → Sonstiges; Amazon Prime/Music → Freizeit\n"
+        f"- Einkommen nur bei Einnahmen (positiver Betrag)\n"
+        f"- Immer eine Kategorie zuweisen, nie leer lassen\n\n"
+        f"BUCHUNGEN:\n{tx_text}\n\n"
+        f"JSON-Antwort: {{\"0\": \"Kategorie\", \"1\": \"Kategorie\", ...}}"
     )
 
     content = _call_api(url, api_key, modell, [{"role": "user", "content": prompt}])
@@ -137,19 +173,121 @@ def _classify_batch(texts: list, kategorien: list, settings: dict, beschreibunge
     return result2 if result2 is not None else ["Sonstiges"] * len(texts)
 
 
-def _keyword_assign(buchungstext: str, bp_map: dict):
+def _keyword_assign(buchungstext: str, bp_map: dict, betrag: float = 0) -> str | None:
     KEYWORDS = {
-        "Wohnen": ["miete", "nebenkosten", "strom", "gas", "wasser", "heizung", "haus", "wohnung", "grundsteuer"],
-        "Mobilitaet": ["tankstelle", "benzin", "diesel", "kfz", "fahrzeug", "auto", "bahn", "bvg", "mvv", "db ", "parken"],
-        "Versicherung": ["versicherung", "allianz", "huk", "axa", "debeka", "signal", "beitrag"],
-        "Lebensmittel": ["rewe", "edeka", "aldi", "lidl", "kaufland", "netto", "penny", "baeckerei", "metzgerei", "bio"],
-        "Freizeit": ["netflix", "spotify", "amazon", "kino", "theater", "restaurant", "cafe", "hotel", "urlaub"],
-        "Einkommen": ["gehalt", "lohn", "rente", "erstattung", "rueckzahlung", "steuererstattung"],
+        "Wohnen": [
+            # Miete
+            "miete", "kaltmiete", "warmmiete", "mietzahlung",
+            # Energie & Wasser
+            "stadtwerke", "gasag", "eon ", "e.on", "rwe", "enercity", "badenova",
+            "berliner wasserbetriebe", "stromabschlag", "gasabschlag", "strom", "gas",
+            "heizung", "fernwaerme", "nebenkosten", "betriebskosten", "abschlag",
+            "wasser", "abwasser", "entsorgung",
+            # Versicherung Wohnen
+            "hausrat", "gebaeude", "hausversicherung",
+            # Sonstiges Wohnen
+            "grundsteuer", "hausmeister", "rundfunk", "ard zdf",
+            "gez", "beitragsservice",
+        ],
+        "Mobilitaet": [
+            # Tankstellen
+            "shell", "aral", "esso", "totalenergies", "hem ", "jet ", "agip",
+            "avia", "star tank", "tankstelle", "benzin", "diesel", "kraftstoff",
+            # Bahn & ÖPNV
+            "deutsche bahn", "db fernverkehr", "db regio", "bvg", "mvv", "hvv",
+            "kvb", "vvs", "rnv", "nahverkehr", "monatskarte", "jahresticket",
+            # Auto
+            "kfz", "tuev", "dekra", "adac", "werkstatt", "autoreparatur",
+            "kfz-versicherung", "huk coburg", "fahrzeug", "parken", "parkhaus",
+            "parkgebuehr", "mietwagen", "sixt", "hertz", "europcar",
+            # Flug & Fernbus
+            "lufthansa", "ryanair", "easyjet", "eurowings", "flixbus", "blablacar",
+        ],
+        "Versicherung": [
+            # Krankenversicherung
+            "techniker krankenkasse", "tk ", "aok", "barmer", "dak", "ikk",
+            "dkv", "knappschaft", "bkk", "krankenversicherung", "pkv",
+            # Lebens & Sonstige
+            "allianz", "axa", "debeka", "signal iduna", "ergo", "generali",
+            "zurich", "wuerttembergische", "provinzial", "sparkassen versicherung",
+            "versicherung", "lebensversicherung", "rentenversicherung",
+            "berufsunfaehigkeit", "unfallversicherung", "haftpflicht",
+        ],
+        "Lebensmittel": [
+            # Supermärkte
+            "rewe", "edeka", "aldi", "lidl", "kaufland", "netto", "penny",
+            "norma", "alnatura", "tegut", "hit ", "real ", "globus",
+            "bio company", "basic bio", "denn's",
+            # Drogerie (Körperpflege → Lebensmittel-Budget)
+            "dm ", "dm-", "rossmann", "mueller drogerie", "budni",
+            # Bäckerei & Essen
+            "baeckerei", "metzgerei", "fleischerei", "saegmueller",
+            "back", "brot", "kaffee",
+            # Getränke & Lieferung
+            "getraenke", "getraenkemarkt", "flaschenpost", "durstexpress",
+            "hellofresh", "marley spoon", "picnic",
+        ],
+        "Freizeit": [
+            # Streaming
+            "netflix", "spotify", "amazon prime", "amazon music", "apple music",
+            "deezer", "tidal", "disney", "disney+", "sky ", "wow tv",
+            "youtube premium", "twitch", "audible",
+            # Sport
+            "fitnessstudio", "mcfit", "clever fit", "gympass", "wellpass",
+            "urban sports", "fitness", "schwimmbad", "golf",
+            # Ausgehen
+            "restaurant", "gaststaette", "kneipe", "bar ", "cafe ", "kaffeehaus",
+            "kino", "cinestar", "cinemaxx", "odeon", "theater", "oper", "konzert",
+            "eventim", "ticketmaster", "lieferando", "uber eats", "wolt",
+            "pizza", "sushi",
+            # Reisen
+            "hotel", "airbnb", "booking.com", "hotels.com", "trivago",
+            "urlaub", "reise", "tui", "alltours",
+            # Gaming & Hobby
+            "steam", "playstation", "xbox", "nintendo", "gaming",
+        ],
+        "Sonstiges": [
+            # Online-Handel
+            "amazon", "ebay", "otto ", "zalando", "about you", "h&m", "zara",
+            "saturn", "mediamarkt", "cyberport", "notebooksbilliger",
+            "ikea", "xxxl", "poco", "roller moebelhaus",
+            "tchibo", "bonprix", "qvc",
+            # Telekommunikation
+            "telekom", "deutsche telekom", "1und1", "1&1", "o2 ", "vodafone",
+            "freenet", "congstar", "klarmobil",
+            # Sonstiges
+            "deutsche post", "dhl", "ups ", "hermes paket", "dpd ",
+            "paypal",
+            "google",
+        ],
+        "Einkommen": [
+            # Positiver Cashflow — aber ACHTUNG: Betrag muss > 0 sein!
+            "gehalt", "lohn", "verguetung", "bezuege",
+            "rente", "pension",
+            "dividende", "zinsen", "kapitalertrag",
+            "freelance", "honorar", "rechnung nr", "invoice",
+            "erstattung", "rueckzahlung", "rueckerstattung",
+            "steuererstattung", "finanzamt",
+            "kindergeld", "wohngeld", "sozialleistung",
+            "bonus", "praemie",
+        ],
+        "Tilgung": [
+            "tilgung", "annuitaet", "annuität", "baufinanzierung",
+            "darlehen", "kredit", "hypothek", "bausparvertrag",
+            "finanzierung", "rate",
+        ],
     }
     text = (buchungstext or "").lower()
+    # Erst alle Nicht-Einkommen-Kategorien prüfen
     for kat, keywords in KEYWORDS.items():
+        if kat == "Einkommen":
+            continue
         if any(kw in text for kw in keywords):
             return bp_map.get(kat)
+    # Einkommen nur wenn Betrag positiv
+    if betrag > 0:
+        if any(kw in text for kw in KEYWORDS.get("Einkommen", [])):
+            return bp_map.get("Einkommen")
     return None
 
 
@@ -315,55 +453,67 @@ def get_ki_zuweisung_status():
     return progress
 
 def run_ki_zuweisung_job():
-    """Hintergrund-Job: Regeln anwenden, dann KI fuer Rest"""
     import frappe as _frappe
-    # Schritt 1: Regeln anwenden
-    from ktesis.api.buchungsregel import apply_buchungsregeln
-    result = apply_buchungsregeln()
-
-    # Schritt 2: Verbleibende offene Buchungen via KI
-    offene = _frappe.get_all("Bankbuchung",
-        filters=[["budgetposten", "is", "not set"]],
-        fields=["name", "buchungstext", "betrag"],
-        limit=200
-    )
-    total = len(offene)
-    if total == 0:
-        return
-
+    
     def _set_progress(done, total, status="running"):
         _frappe.cache().set_value("ki_zuweisung_progress",
             {"status": status, "done": done, "total": total}, expires_in_sec=3600)
-
+    
+    # Schritt 1: Regeln anwenden
+    from ktesis.api.buchungsregel import apply_buchungsregeln
+    apply_buchungsregeln()
+    
+    # Schritt 2: Gesamtzahl offener Buchungen
+    total = _frappe.db.count("Bankbuchung", filters={"budgetposten": ["is", "not set"]})
+    if total == 0:
+        _set_progress(0, 0, "finished")
+        return
+    
     _set_progress(0, total)
-
-    # Budgettoepfe fuer Kontext laden — nutze kategorie als key (nicht titel)
-    budgetposten_list = _frappe.get_all("Budgetposten", fields=["name", "kategorie"], limit=50)
-    bp_map = {b.kategorie: b.name for b in budgetposten_list if b.kategorie}
-
-    # Batch-Verarbeitung (10 pro Call)
-    batch_size = 10
+    
+    # Schritt 3: Keyword-Pass (schnell, kein API)
+    settings = _get_settings()
+    bp_list = _frappe.get_all("Budgetposten", fields=["name", "kategorie"])
+    bp_map = {b.kategorie: b.name for b in bp_list}
+    
+    offene = _frappe.get_all("Bankbuchung",
+        filters=[["budgetposten", "is", "not set"]],
+        fields=["name", "buchungstext", "betrag"], limit=500)
+    
     done = 0
-    for i in range(0, total, batch_size):
-        batch = offene[i:i+batch_size]
-        try:
-            for b in batch:
-                result = _keyword_assign(b.buchungstext, bp_map)
-                if result:
-                    _frappe.db.set_value("Bankbuchung", b.name, "budgetposten", result)
-            done += len(batch)
-            _set_progress(done, total)
-        except Exception as e:
-            _frappe.log_error(str(e), "KI Zuweisung Batch Error")
-
-    _frappe.db.commit()
-    _set_progress(done, total, status="finished")
-
-def _ki_assign_batch(buchungen, budgetposten):
-    """KI-Call fuer einen Batch von Buchungen - Stub, nutzt bestehende ai_assign Logik"""
-    # Nutzt die bestehende ai_assign_budgetposten Logik als Fallback
-    bp_map = {b.titel: b.name for b in budgetposten}
-    for b in buchungen:
-        result = _keyword_assign(b.buchungstext, bp_map)
+    ki_batch = []
+    ki_batch_names = []
+    
+    for b in offene:
+        result = _keyword_assign(b.buchungstext, bp_map, float(b.betrag or 0))
         if result:
-            frappe.db.set_value("Bankbuchung", b.name, "budgetposten", result)
+            _frappe.db.set_value("Bankbuchung", b.name, "budgetposten", result)
+            done += 1
+        else:
+            ki_batch.append(_preprocess_buchungstext(b.buchungstext))
+            ki_batch_names.append(b.name)
+    
+    _frappe.db.commit()
+    _set_progress(done, total)
+    
+    # Schritt 4: LLM-Pass für verbleibende
+    if ki_batch and settings.get("aktiv") and settings.get("api_key"):
+        beschreibungen = {b.kategorie: "" for b in bp_list}
+        kategorien = list(bp_map.keys())
+        batch_size = 15
+        for i in range(0, len(ki_batch), batch_size):
+            texts = ki_batch[i:i+batch_size]
+            names = ki_batch_names[i:i+batch_size]
+            try:
+                results = _classify_batch(texts, kategorien, settings, beschreibungen)
+                for name, kat in zip(names, results):
+                    bp_name = bp_map.get(kat)
+                    if bp_name:
+                        _frappe.db.set_value("Bankbuchung", name, "budgetposten", bp_name)
+                        done += 1
+                _frappe.db.commit()
+            except Exception as e:
+                _frappe.log_error(str(e), "KI Zuweisung LLM Error")
+            _set_progress(done, total)
+    
+    _set_progress(done, total, "finished")
