@@ -527,8 +527,15 @@ async function loadOffeneBuchungen() {
 }
 
 async function loadBudgetposten() {
-  const res = await call('frappe.client.get_list', { doctype: 'Budgetposten', fields: ['name','kategorie'], limit: 100 })
-  alleBudgetposten.value = res || []
+  const res = await call('frappe.client.get_list', { 
+    doctype: 'Budgetposten', 
+    fields: ['name', 'kategorie'],
+    limit: 100 
+  })
+  // Filtere leere/interne Kategorien aus
+  alleBudgetposten.value = (res || []).filter(bp => 
+    bp.kategorie && bp.kategorie.trim() !== '' && bp.kategorie !== 'KI'
+  )
 }
 
 async function loadBuchungsregeln() {
@@ -559,8 +566,20 @@ function suggestPattern(empfaenger, budgetpostenName) {
 
 function extractEmpfaenger(buchungstext) {
   if (!buchungstext) return ''
-  const parts = buchungstext.split(/\s+/)
-  return parts.find(p => p.length > 2 && !/^\d/.test(p)) || parts[0] || ''
+  // Format: "Auftraggeber: NAME Buchungstext: ..." oder "Empfänger: NAME ..."
+  const prefixes = ['Auftraggeber: ', 'Empfänger: ', 'Auftraggeber:', 'Empfänger:']
+  for (const prefix of prefixes) {
+    if (buchungstext.startsWith(prefix)) {
+      const rest = buchungstext.slice(prefix.length).trim()
+      // Schneide bei "Buchungstext:" ab
+      const cutAt = rest.indexOf('Buchungstext:')
+      const name = cutAt > -1 ? rest.slice(0, cutAt).trim() : rest.split(/\s{2,}/)[0].trim()
+      // Nehme nur erste 40 Zeichen
+      return name.slice(0, 40)
+    }
+  }
+  // Kein Präfix → ersten sinnvollen Teil zurückgeben
+  return buchungstext.split('Buchungstext:')[0].trim().slice(0, 40) || buchungstext.slice(0, 40)
 }
 
 async function deleteRegel(name) {
