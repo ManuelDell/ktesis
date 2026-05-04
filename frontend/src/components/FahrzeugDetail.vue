@@ -53,54 +53,43 @@
       <!-- Dokumente -->
       <div v-if="!isNew" class="border-t border-outline-gray-2 pt-5 space-y-4">
         <h4 class="text-sm font-medium text-ink-gray-7">Dokumente</h4>
-
-        <!-- Fahrzeugschein -->
         <div>
-          <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugschein (Zulassungsbescheinigung Teil I)</p>
           <FileUploader
             :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, private: 1 }"
-            @success="(f) => onUploadSuccessTyped(f, 'FZI')"
+            @success="onUploadRaw"
             fileTypes=".pdf,.jpg,.jpeg,.png"
           >
             <template #default="{ openFileSelector, uploading, progress }">
               <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="sm">
                 <span class="flex items-center gap-2 whitespace-nowrap">
                   <FeatherIcon name="upload" class="w-4 h-4" />
-                  {{ uploading ? `Upload ${progress}%` : 'Fahrzeugschein hochladen' }}
+                  {{ uploading ? `Upload ${progress}%` : 'Anhang hinzufügen' }}
                 </span>
               </Button>
             </template>
           </FileUploader>
+          <div v-if="showTypeDialog" class="mt-3 p-3 bg-surface-gray-1 rounded-lg border border-outline-gray-2">
+            <p class="text-xs text-ink-gray-6 mb-2">Was wurde hochgeladen?</p>
+            <div class="flex flex-wrap gap-2">
+              <button @click="assignType('FZI')"
+                class="text-xs px-3 py-1.5 rounded-md bg-white border border-outline-gray-3 hover:border-outline-gray-5 text-ink-gray-9 transition-colors">
+                Fahrzeugschein (FZI)
+              </button>
+              <button @click="assignType('FZII')"
+                class="text-xs px-3 py-1.5 rounded-md bg-white border border-outline-gray-3 hover:border-outline-gray-5 text-ink-gray-9 transition-colors">
+                Fahrzeugbrief (FZII)
+              </button>
+              <button @click="assignType('other')"
+                class="text-xs px-3 py-1.5 rounded-md bg-white border border-outline-gray-3 hover:border-outline-gray-4 text-ink-gray-4 transition-colors">
+                Sonstiger Anhang
+              </button>
+            </div>
+          </div>
           <div v-if="uploadSuccess" class="flex items-center gap-1.5 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-2 transition-all">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                    Datei erfolgreich hochgeladen
-                  </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Datei erfolgreich hochgeladen
+          </div>
         </div>
-
-        <!-- Fahrzeugbrief -->
-        <div>
-          <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugbrief (Zulassungsbescheinigung Teil II)</p>
-          <FileUploader
-            :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, private: 1 }"
-            @success="(f) => onUploadSuccessTyped(f, 'FZII')"
-            fileTypes=".pdf,.jpg,.jpeg,.png"
-          >
-            <template #default="{ openFileSelector, uploading, progress }">
-              <Button @click="openFileSelector" :loading="uploading" variant="outline" theme="gray" size="sm">
-                <span class="flex items-center gap-2 whitespace-nowrap">
-                  <FeatherIcon name="upload" class="w-4 h-4" />
-                  {{ uploading ? `Upload ${progress}%` : 'Fahrzeugbrief hochladen' }}
-                </span>
-              </Button>
-            </template>
-          </FileUploader>
-          <div v-if="uploadSuccess" class="flex items-center gap-1.5 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-2 transition-all">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                    Datei erfolgreich hochgeladen
-                  </div>
-        </div>
-
-        <!-- Alle Anhänge -->
         <AttachmentList ref="attachmentList" doctype="Fahrzeug" :docname="docname" />
       </div>
 
@@ -149,6 +138,8 @@ const saving = ref(false)
 const error = ref(null)
 const attachmentList = ref(null)
 const uploadSuccess = ref(false)
+const pendingFile = ref(null)
+const showTypeDialog = ref(false)
 
 const form = reactive({
   kennzeichen: '',
@@ -199,6 +190,33 @@ onMounted(async () => {
     }
   }
 })
+
+async function onUploadRaw(file) {
+  const hasFZI = attachmentList.value?.hasFileWithPrefix?.('FZI-') ?? false
+  if (!hasFZI && file) {
+    pendingFile.value = file
+    showTypeDialog.value = true
+  } else {
+    if (file && attachmentList.value?.addFile) attachmentList.value.addFile(file)
+    uploadSuccess.value = true
+    setTimeout(() => { uploadSuccess.value = false }, 2500)
+    setTimeout(() => attachmentList.value?.reload(), 1500)
+  }
+}
+
+async function assignType(type) {
+  showTypeDialog.value = false
+  const file = pendingFile.value
+  pendingFile.value = null
+  if (type === 'FZI' || type === 'FZII') {
+    await onUploadSuccessTyped(file, type)
+  } else {
+    if (file && attachmentList.value?.addFile) attachmentList.value.addFile(file)
+    uploadSuccess.value = true
+    setTimeout(() => { uploadSuccess.value = false }, 2500)
+    setTimeout(() => attachmentList.value?.reload(), 1500)
+  }
+}
 
 async function renameFile(name, baseName) {
   try {

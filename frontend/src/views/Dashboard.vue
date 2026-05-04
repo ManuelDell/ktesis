@@ -137,7 +137,7 @@
           <FeatherIcon name="file-text" class="w-4 h-4 text-ink-gray-5" />
           Vertragskosten
         </h3>
-        <div v-if="finance.vertragskosten" class="space-y-4">
+        <div v-if="finance.vertragskosten" class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-xs text-ink-gray-5 mb-0.5">Monatliche Belastung</p>
@@ -148,7 +148,19 @@
               <p class="text-2xl font-bold text-ink-gray-9">{{ fmtEuro(finance.vertragskosten.jaehrlich) }}</p>
             </div>
           </div>
-          <p class="text-xs text-ink-gray-4">Summe aller laufenden Verträge</p>
+          <div v-if="finance.vertragskosten.vertraege?.length" class="border-t border-outline-gray-1 pt-2 space-y-0">
+            <div v-for="v in finance.vertragskosten.vertraege" :key="v.name"
+              class="flex justify-between items-center py-2 border-b border-outline-gray-1 last:border-0 text-sm">
+              <div class="min-w-0">
+                <p class="font-medium text-ink-gray-9 truncate">{{ v.titel }}</p>
+                <p class="text-xs text-ink-gray-4">{{ faelligLabel(v) }}</p>
+              </div>
+              <div class="text-right shrink-0 ml-3">
+                <p class="font-semibold text-ink-gray-9">{{ zahlungBetrag(v) }}</p>
+                <p class="text-xs text-ink-gray-4">{{ rhythmusKurz(v.zahlungsrhythmus) }}</p>
+              </div>
+            </div>
+          </div>
         </div>
         <div v-else class="text-sm text-ink-gray-4">Keine Vertragskosten erfasst</div>
       </div>
@@ -253,6 +265,45 @@ const maxSondertilgungMonatlich = computed(() => {
   if (!betrag) return 500
   return Math.round(betrag * satz / 100 / 12)
 })
+
+function zahlungBetrag(v) {
+  const km = v.kosten_monatlich || 0
+  const kj = v.kosten_jaehrlich || 0
+  switch (v.zahlungsrhythmus) {
+    case 'Monatlich': return fmtEuro(km)
+    case 'Vierteljaehrlich': return fmtEuro(kj / 4)
+    case 'Halbjaehrlich': return fmtEuro(kj / 2)
+    case 'Jaehrlich': return fmtEuro(kj)
+    case 'Einmalig': return fmtEuro(km || kj)
+    default: return km ? fmtEuro(km) : fmtEuro(kj)
+  }
+}
+
+function rhythmusKurz(r) {
+  const map = { 'Monatlich': 'monatlich', 'Vierteljaehrlich': 'quartalsweise',
+                'Halbjaehrlich': 'halbjährlich', 'Jaehrlich': 'jährlich', 'Einmalig': 'einmalig' }
+  return map[r] || r || ''
+}
+
+function faelligLabel(v) {
+  if (!v.vertragsbeginn) return v.vertragstyp || ''
+  const d = new Date(v.vertragsbeginn)
+  const tag = d.getUTCDate()
+  const mon = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez']
+  const r = v.zahlungsrhythmus || ''
+  if (r === 'Monatlich') return `${tag}. jeden Monat`
+  if (r === 'Jaehrlich') return `${tag}. ${mon[d.getUTCMonth()]}`
+  if (r === 'Vierteljaehrlich') {
+    const m = d.getUTCMonth()
+    return `${tag}. ` + [0,1,2,3].map(i => mon[(m + i * 3) % 12]).join(' · ')
+  }
+  if (r === 'Halbjaehrlich') {
+    const m = d.getUTCMonth()
+    return `${tag}. ${mon[m]} + ${mon[(m + 6) % 12]}`
+  }
+  if (r === 'Einmalig') return 'Einmalig'
+  return v.vertragstyp || ''
+}
 
 function fmtEuro(n) {
   if (n == null) return '-'

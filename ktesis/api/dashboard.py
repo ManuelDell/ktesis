@@ -11,28 +11,56 @@ def get_finance_summary() -> dict:
 		filters={"aktiv": 1},
 		fields=["name", "bezeichnung", "bank", "kontotyp", "kontostand_manuell", "waehrung"]
 	)
-
 	darlehen = frappe.get_all(
 		"Darlehen",
 		filters={"aktiv": 1},
 		fields=["name", "bezeichnung", "darlehensgeber", "darlehensbetrag", "restschuld",
 		        "zinssatz", "monatliche_rate", "ende"]
 	)
-
-	vertragskosten = frappe.db.sql("""
-		SELECT
-			COALESCE(SUM(kosten_monatlich), 0) as monatlich,
-			COALESCE(SUM(kosten_jaehrlich), 0) as jaehrlich
-		FROM `tabVertrag`
-		WHERE aktiv = 1
-	""", as_dict=True)[0]
-
+	vertraege_raw = frappe.get_all(
+		"Vertrag",
+		filters={"aktiv": 1},
+		fields=["name", "titel", "vertragstyp", "vertragspartner",
+		        "kosten_monatlich", "kosten_jaehrlich", "zahlungsrhythmus", "vertragsbeginn"],
+		order_by="titel asc"
+	)
+	monatlich_gesamt = 0.0
+	jaehrlich_gesamt = 0.0
+	for v in vertraege_raw:
+		km = float(v.kosten_monatlich or 0)
+		kj = float(v.kosten_jaehrlich or 0)
+		r = (v.zahlungsrhythmus or "").strip()
+		if r == "Monatlich":
+			monatlich_gesamt += km
+			jaehrlich_gesamt += km * 12
+		elif r in ("Vierteljaehrlich", "Halbjaehrlich", "Jaehrlich"):
+			if kj:
+				monatlich_gesamt += kj / 12
+				jaehrlich_gesamt += kj
+			else:
+				monatlich_gesamt += km
+				jaehrlich_gesamt += km * 12
+		elif r == "Einmalig":
+			pass
+		else:
+			monatlich_gesamt += km
+			jaehrlich_gesamt += kj if kj else km * 12
+	vertraege_list = [
+		{"name": v.name, "titel": v.titel, "vertragstyp": v.vertragstyp,
+		 "vertragspartner": v.vertragspartner,
+		 "kosten_monatlich": float(v.kosten_monatlich or 0),
+		 "kosten_jaehrlich": float(v.kosten_jaehrlich or 0),
+		 "zahlungsrhythmus": v.zahlungsrhythmus or "",
+		 "vertragsbeginn": str(v.vertragsbeginn) if v.vertragsbeginn else ""}
+		for v in vertraege_raw
+	]
 	return {
 		"bankkonten": bankkonten,
 		"darlehen": darlehen,
 		"vertragskosten": {
-			"monatlich": vertragskosten.monatlich or 0,
-			"jaehrlich": vertragskosten.jaehrlich or 0
+			"monatlich": round(monatlich_gesamt, 2),
+			"jaehrlich": round(jaehrlich_gesamt, 2),
+			"vertraege": vertraege_list,
 		}
 	}
 

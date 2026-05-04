@@ -187,6 +187,9 @@ defineExpose({
     if (file && !files.value.find(f => f.name === file.name)) {
       files.value.unshift(file)
     }
+  },
+  hasFileWithPrefix(prefix) {
+    return files.value.some(f => f.file_name?.startsWith(prefix))
   }
 })
 </script>
