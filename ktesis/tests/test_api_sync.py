@@ -86,14 +86,17 @@ class TestFrontendBackendSync(unittest.TestCase):
             lines = text.splitlines()
             for i, line in enumerate(lines):
                 if "@frappe.whitelist()" in line:
-                    for j in range(i + 1, min(i + 4, len(lines))):
+                    for j in range(i + 1, min(i + 10, len(lines))):
                         next_line = lines[j].strip()
-                        if next_line and not next_line.startswith("#"):
-                            self.assertTrue(
-                                next_line.startswith("def "),
-                                f"{path.name}:{j+1}: @frappe.whitelist() steht ueber '{next_line}' statt ueber einer def"
-                            )
-                            break
+                        if not next_line or next_line.startswith("#"):
+                            continue
+                        if next_line.startswith("@"):
+                            continue
+                        self.assertTrue(
+                            next_line.startswith("def "),
+                            f"{path.name}:{j+1}: @frappe.whitelist() steht ueber '{next_line}' statt ueber einer def"
+                        )
+                        break
 
     def test_csrf_token_correct(self):
         """useApi.js soll window.frappe?.csrf_token verwenden."""
