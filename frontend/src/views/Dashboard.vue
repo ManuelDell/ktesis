@@ -126,6 +126,9 @@
             <div class="text-right">
               <p class="font-semibold text-ink-red-4 text-sm">-{{ fmtEuro(d.restschuld) }}</p>
               <p class="text-xs text-ink-gray-5">{{ fmtEuro(d.monatliche_rate) }}/Monat</p>
+              <p v-if="getSavedSondertilgung(d.name) > 0" class="text-xs text-ink-green-3 mt-0.5">
+                + {{ fmtEuro(getSavedSondertilgung(d.name)) }}/Mo Sondertilgung → Total: {{ fmtEuro((d.monatliche_rate || 0) + getSavedSondertilgung(d.name)) }}/Mo
+              </p>
             </div>
           </div>
         </div>
@@ -216,6 +219,30 @@
             <div class="text-xs text-ink-gray-5 mb-1">Zinsersparnis</div>
             <div class="text-lg font-bold text-ink-green-3">{{ fmtEuro(tilgungErgebnis.zinsersparnis) }}</div>
           </div>
+          <div class="bg-surface-gray-1 border border-outline-gray-2 rounded-lg p-3">
+            <div class="text-xs text-ink-gray-5 mb-2">Monatliche Belastung bei Sondertilgung</div>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between">
+                <span class="text-ink-gray-6">Reguläre Rate</span>
+                <span class="font-medium text-ink-gray-9">{{ fmtEuro(finance.darlehen[tilgungDarlehenIdx].monatliche_rate) }}</span>
+              </div>
+              <div v-if="extraTilgung > 0" class="flex justify-between">
+                <span class="text-ink-gray-6">+ Sondertilgung</span>
+                <span class="font-medium text-ink-gray-9">{{ fmtEuro(extraTilgung) }}</span>
+              </div>
+              <div class="h-px bg-outline-gray-2 my-1" />
+              <div class="flex justify-between font-bold">
+                <span class="text-ink-gray-9">Gesamt</span>
+                <span class="text-ink-gray-9">{{ fmtEuro((finance.darlehen[tilgungDarlehenIdx].monatliche_rate || 0) + extraTilgung) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <button @click="saveSondertilgung" class="px-3 py-1.5 bg-white border border-outline-gray-3 rounded-md text-xs font-medium text-ink-gray-7 hover:bg-surface-gray-1 transition-colors">
+              Sondertilgung speichern
+            </button>
+            <span v-if="savedMsg" class="text-xs text-ink-green-3 font-medium">Gespeichert ✓</span>
+          </div>
         </div>
       </div>
     </div>
@@ -224,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import { Chart, BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, BarController, LineController } from 'chart.js'
 Chart.register(BarElement, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, BarController, LineController)
 import { FeatherIcon, Badge } from 'frappe-ui'
@@ -247,7 +274,8 @@ const ampelLoading = ref(false)
 const chartCanvas = ref(null)
 let chartInstance = null
 const tilgungDarlehenIdx = ref(0)
-const extraTilgung = ref(100)
+const extraTilgung = ref(0)
+const savedMsg = ref(false)
 
 // Trendlinie berechnen (gleitender 3-Monats-Durchschnitt)
 function movingAvg(data, window = 3) {
@@ -264,6 +292,33 @@ const maxSondertilgungMonatlich = computed(() => {
   const betrag = parseFloat(d.darlehensbetrag || 0)
   if (!betrag) return 500
   return Math.round(betrag * satz / 100 / 12)
+})
+
+function sondertilgungKey(name) {
+  return `ktesis_sondertilgung_${name}`
+}
+
+function getSavedSondertilgung(name) {
+  const v = localStorage.getItem(sondertilgungKey(name))
+  return v ? parseFloat(v) : 0
+}
+
+function loadSondertilgung(idx) {
+  const d = finance.value?.darlehen?.[idx]
+  if (!d) return
+  extraTilgung.value = getSavedSondertilgung(d.name)
+}
+
+function saveSondertilgung() {
+  const d = finance.value?.darlehen?.[tilgungDarlehenIdx.value]
+  if (!d) return
+  localStorage.setItem(sondertilgungKey(d.name), String(extraTilgung.value))
+  savedMsg.value = true
+  setTimeout(() => { savedMsg.value = false }, 2000)
+}
+
+watch(tilgungDarlehenIdx, (newVal) => {
+  loadSondertilgung(newVal)
 })
 
 function zahlungBetrag(v) {
@@ -361,6 +416,9 @@ onMounted(async () => {
     finance.value = financeData
     vermoegen.value = vermoegenData
   } catch (e) { console.error('Dashboard load error:', e) }
+
+  // Lade gespeicherte Sondertilgung für das erste Darlehen
+  loadSondertilgung(0)
 
   ampelLoading.value = true
   try {
