@@ -173,121 +173,60 @@ Tilgung Baufinanzierung → Tilgung"""
     return result2 if result2 is not None else ["Sonstiges"] * len(texts)
 
 
-def _keyword_assign(buchungstext: str, bp_map: dict, betrag: float = 0) -> str | None:
-    KEYWORDS = {
-        "Wohnen": [
-            # Miete
-            "miete", "kaltmiete", "warmmiete", "mietzahlung",
-            # Energie & Wasser
-            "stadtwerke", "gasag", "eon ", "e.on", "rwe", "enercity", "badenova",
-            "berliner wasserbetriebe", "stromabschlag", "gasabschlag", "strom", "gas",
-            "heizung", "fernwaerme", "nebenkosten", "betriebskosten", "abschlag",
-            "wasser", "abwasser", "entsorgung",
-            # Versicherung Wohnen
-            "hausrat", "gebaeude", "hausversicherung",
-            # Sonstiges Wohnen
-            "grundsteuer", "hausmeister", "rundfunk", "ard zdf",
-            "gez", "beitragsservice",
-        ],
-        "Mobilitaet": [
-            # Tankstellen
-            "shell", "aral", "esso", "totalenergies", "hem ", "jet ", "agip",
-            "avia", "star tank", "tankstelle", "benzin", "diesel", "kraftstoff",
-            # Bahn & ÖPNV
-            "deutsche bahn", "db fernverkehr", "db regio", "bvg", "mvv", "hvv",
-            "kvb", "vvs", "rnv", "nahverkehr", "monatskarte", "jahresticket",
-            # Auto
-            "kfz", "tuev", "dekra", "adac", "werkstatt", "autoreparatur",
-            "kfz-versicherung", "huk coburg", "fahrzeug", "parken", "parkhaus",
-            "parkgebuehr", "mietwagen", "sixt", "hertz", "europcar",
-            # Flug & Fernbus
-            "lufthansa", "ryanair", "easyjet", "eurowings", "flixbus", "blablacar",
-        ],
-        "Versicherung": [
-            # Krankenversicherung
-            "techniker krankenkasse", "tk ", "aok", "barmer", "dak", "ikk",
-            "dkv", "knappschaft", "bkk", "krankenversicherung", "pkv",
-            # Lebens & Sonstige
-            "allianz", "axa", "debeka", "signal iduna", "ergo", "generali",
-            "zurich", "wuerttembergische", "provinzial", "sparkassen versicherung",
-            "versicherung", "lebensversicherung", "rentenversicherung",
-            "berufsunfaehigkeit", "unfallversicherung", "haftpflicht",
-        ],
-        "Lebensmittel": [
-            # Supermärkte
-            "rewe", "edeka", "aldi", "lidl", "kaufland", "netto", "penny",
-            "norma", "alnatura", "tegut", "hit ", "real ", "globus",
-            "bio company", "basic bio", "denn's",
-            # Drogerie (Körperpflege → Lebensmittel-Budget)
-            "dm ", "dm-", "rossmann", "mueller drogerie", "budni",
-            # Bäckerei & Essen
-            "baeckerei", "metzgerei", "fleischerei", "saegmueller",
-            "back", "brot", "kaffee",
-            # Getränke & Lieferung
-            "getraenke", "getraenkemarkt", "flaschenpost", "durstexpress",
-            "hellofresh", "marley spoon", "picnic",
-        ],
-        "Freizeit": [
-            # Streaming
-            "netflix", "spotify", "amazon prime", "amazon music", "apple music",
-            "deezer", "tidal", "disney", "disney+", "sky ", "wow tv",
-            "youtube premium", "twitch", "audible",
-            # Sport
-            "fitnessstudio", "mcfit", "clever fit", "gympass", "wellpass",
-            "urban sports", "fitness", "schwimmbad", "golf",
-            # Ausgehen
-            "restaurant", "gaststaette", "kneipe", "bar ", "cafe ", "kaffeehaus",
-            "kino", "cinestar", "cinemaxx", "odeon", "theater", "oper", "konzert",
-            "eventim", "ticketmaster", "lieferando", "uber eats", "wolt",
-            "pizza", "sushi",
-            # Reisen
-            "hotel", "airbnb", "booking.com", "hotels.com", "trivago",
-            "urlaub", "reise", "tui", "alltours",
-            # Gaming & Hobby
-            "steam", "playstation", "xbox", "nintendo", "gaming",
-        ],
-        "Sonstiges": [
-            # Online-Handel
-            "amazon", "ebay", "otto ", "zalando", "about you", "h&m", "zara",
-            "saturn", "mediamarkt", "cyberport", "notebooksbilliger",
-            "ikea", "xxxl", "poco", "roller moebelhaus",
-            "tchibo", "bonprix", "qvc",
-            # Telekommunikation
-            "telekom", "deutsche telekom", "1und1", "1&1", "o2 ", "vodafone",
-            "freenet", "congstar", "klarmobil",
-            # Sonstiges
-            "deutsche post", "dhl", "ups ", "hermes paket", "dpd ",
-            "paypal",
-            "google",
-        ],
-        "Einkommen": [
-            # Positiver Cashflow — aber ACHTUNG: Betrag muss > 0 sein!
-            "gehalt", "lohn", "verguetung", "bezuege",
-            "rente", "pension",
-            "dividende", "zinsen", "kapitalertrag",
-            "freelance", "honorar", "rechnung nr", "invoice",
-            "erstattung", "rueckzahlung", "rueckerstattung",
-            "steuererstattung", "finanzamt",
-            "kindergeld", "wohngeld", "sozialleistung",
-            "bonus", "praemie",
-        ],
-        "Tilgung": [
-            "tilgung", "annuitaet", "annuität", "baufinanzierung",
-            "darlehen", "kredit", "hypothek", "bausparvertrag",
-            "finanzierung", "rate",
-        ],
-    }
+def _keyword_assign(buchungstext: str, bp_map: dict, betrag: float = 0, beschreibungen: dict = None) -> str | None:
     text = (buchungstext or "").lower()
-    # Erst alle Nicht-Einkommen-Kategorien prüfen
+
+    # Phase 1: ki_beschreibung-based matching — works with any category names
+    if beschreibungen:
+        income_cats = []
+        for kat, desc in beschreibungen.items():
+            if not desc or kat == "KI":
+                continue
+            kws = [k.strip().lower() for k in desc.replace(";", ",").split(",") if len(k.strip()) > 2]
+            if not kws:
+                continue
+            if any(kw in text for kw in kws):
+                # Defer income-like categories — only assign if betrag > 0
+                kat_lower = kat.lower()
+                if "einkommen" in kat_lower or "gehalt" in desc.lower()[:20]:
+                    income_cats.append(kat)
+                    continue
+                return bp_map.get(kat)
+        if income_cats and betrag > 0:
+            return bp_map.get(income_cats[0])
+        return None
+
+    # Phase 2: Hardcoded KEYWORDS fallback (for setups without ki_beschreibung)
+    def _norm(s):
+        return s.lower().replace("ä","ae").replace("ö","oe").replace("ü","ue").replace("ß","ss").replace(" ","").replace("&","")
+    bp_norm = {_norm(k): v for k, v in bp_map.items()}
+
+    def _get(kat): return bp_norm.get(_norm(kat)) or bp_map.get(kat)
+
+    KEYWORDS = {
+        "Wohnen": ["miete","kaltmiete","warmmiete","stadtwerke","eon ","rwe","strom","gas ","heizung","fernwaerme","nebenkosten","betriebskosten","abschlag","wasser","abwasser","grundsteuer","hausmeister","rundfunk","ard zdf","gez","beitragsservice","hausrat","gebaeude","hausversicherung"],
+        "Mobilitaet": ["shell","aral","esso","totalenergies","tankstelle","benzin","diesel","kraftstoff","deutsche bahn","db fernverkehr","db regio","bvg","mvv","hvv","kvb","vvs","nahverkehr","monatskarte","jahresticket","kfz","tuev","dekra","adac","werkstatt","autoreparatur","kfz-versicherung","huk coburg","parken","parkhaus","mietwagen","sixt","hertz","lufthansa","ryanair","easyjet","eurowings","flixbus","blablacar"],
+        "Versicherung": ["techniker krankenkasse","tk ","aok","barmer","dak","ikk","dkv","knappschaft","bkk","krankenversicherung","pkv","allianz","axa","debeka","signal iduna","ergo","generali","provinzial","versicherung","lebensversicherung","rentenversicherung","berufsunfaehigkeit","unfallversicherung","haftpflicht"],
+        "Lebensmittel": ["rewe","edeka","aldi","lidl","kaufland","netto","penny","norma","alnatura","tegut","bio company","basic bio","dm ","dm-","rossmann","budni","baeckerei","metzgerei","fleischerei","getraenke","getraenkemarkt","hellofresh","marley spoon","picnic"],
+        "Freizeit": ["netflix","spotify","amazon prime","amazon music","apple music","deezer","tidal","disney","disney+","sky ","wow tv","youtube premium","twitch","audible","fitnessstudio","mcfit","clever fit","gympass","wellpass","urban sports","fitness","schwimmbad","golf","restaurant","gaststaette","kneipe","bar ","cafe ","kaffeehaus","kino","cinestar","cinemaxx","odeon","theater","oper","konzert","eventim","ticketmaster","lieferando","uber eats","wolt","pizza","sushi","hotel","airbnb","booking.com","hotels.com","trivago","urlaub","reise","tui","alltours","steam","playstation","xbox","nintendo","gaming"],
+        "Sonstiges": ["ebay","otto ","about you","h&m","zara","saturn","mediamarkt","cyberport","notebooksbilliger","ikea","xxxl","poco","roller moebelhaus","tchibo","bonprix","qvc","telekom","deutsche telekom","1und1","1&1","o2 ","vodafone","freenet","congstar","klarmobil","deutsche post","dhl","ups ","hermes paket","dpd ","paypal","google"],
+        "Tilgung": ["tilgung","annuitaet","annuität","baufinanzierung","darlehen","kredit","hypothek","bausparvertrag","finanzierung","rate"],
+        "Einkommen": ["gehalt","lohn","verguetung","bezuege","rente","pension","dividende","zinsen","kapitalertrag","freelance","honorar","rechnung nr","invoice","erstattung","rueckzahlung","rueckerstattung","steuererstattung","finanzamt","kindergeld","wohngeld","sozialleistung","bonus","praemie"],
+    }
     for kat, keywords in KEYWORDS.items():
         if kat == "Einkommen":
             continue
         if any(kw in text for kw in keywords):
-            return bp_map.get(kat)
-    # Einkommen nur wenn Betrag positiv
-    if betrag > 0:
-        if any(kw in text for kw in KEYWORDS.get("Einkommen", [])):
-            return bp_map.get("Einkommen")
+            result = _get(kat)
+            if result:
+                return result
+    # Amazon: Prime/Music → Freizeit, sonst Sonstiges
+    if "amazon" in text:
+        if "prime" in text or "music" in text or "audible" in text:
+            return _get("Freizeit")
+        return _get("Sonstiges")
+    if betrag > 0 and any(kw in text for kw in KEYWORDS["Einkommen"]):
+        return _get("Einkommen")
     return None
 
 
@@ -473,7 +412,7 @@ def run_ki_zuweisung_job():
     
     # Schritt 3: Keyword-Pass (schnell, kein API)
     settings = _get_settings()
-    bp_list = _frappe.get_all("Budgetposten", fields=["name", "kategorie"])
+    bp_list = _frappe.get_all("Budgetposten", fields=["name", "kategorie", "ki_beschreibung"])
     bp_map = {b.kategorie: b.name for b in bp_list}
     
     offene = _frappe.get_all("Bankbuchung",
@@ -485,7 +424,7 @@ def run_ki_zuweisung_job():
     ki_batch_names = []
     
     for b in offene:
-        result = _keyword_assign(b.buchungstext, bp_map, float(b.betrag or 0))
+        result = _keyword_assign(b.buchungstext, bp_map, float(b.betrag or 0), beschreibungen)
         if result:
             _frappe.db.set_value("Bankbuchung", b.name, "budgetposten", result)
             done += 1
@@ -498,7 +437,7 @@ def run_ki_zuweisung_job():
     
     # Schritt 4: LLM-Pass für verbleibende
     if ki_batch and settings.get("aktiv") and settings.get("api_key"):
-        beschreibungen = {b.kategorie: "" for b in bp_list}
+        beschreibungen = {b.kategorie: (b.get("ki_beschreibung") or "") for b in bp_list}
         kategorien = list(bp_map.keys())
         batch_size = 15
         for i in range(0, len(ki_batch), batch_size):
