@@ -5,6 +5,8 @@
 ### Persönliche Vermögensverwaltung — klar, sicher, selbstgehostet.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-silver.svg)](LICENSE)
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/manueldell)
 [![Frappe](https://img.shields.io/badge/Frappe-v15-blue.svg)](https://frappe.io)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883.svg)](https://vuejs.org)
 [![Python](https://img.shields.io/badge/Python-3.10+-yellow.svg)](https://python.org)
