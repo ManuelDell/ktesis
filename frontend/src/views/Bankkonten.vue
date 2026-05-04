@@ -95,8 +95,21 @@
       </div>
       </template>
 
+      <!-- Tabs -->
+      <div class="mt-8 border-b border-outline-gray-2">
+        <div class="flex gap-6">
+          <button @click="activeTab = 'buchungen'" :class="activeTab === 'buchungen' ? 'border-b-2 border-blue-500 text-blue-600 pb-2' : 'text-ink-gray-5 pb-2'">
+            Buchungen
+          </button>
+          <button @click="activeTab = 'zuweisung'" :class="activeTab === 'zuweisung' ? 'border-b-2 border-blue-500 text-blue-600 pb-2' : 'text-ink-gray-5 pb-2'">
+            Zuweisung
+            <span v-if="offeneZuweisungCount > 0" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">{{ offeneZuweisungCount }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Buchungsliste -->
-      <div class="mt-8">
+      <div v-if="activeTab === 'buchungen'" class="mt-4">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-ink-gray-9 flex items-center gap-2">
             <FeatherIcon name="list" class="w-4 h-4 text-ink-gray-5" />
@@ -230,6 +243,83 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Zuweisung -->
+      <div v-if="activeTab === 'zuweisung'" class="p-4 space-y-4">
+
+        <!-- KI-Aktion Header -->
+        <div class="flex items-center justify-between">
+          <div v-if="kiJobStatus === 'started'" class="flex items-center gap-2 text-sm text-ink-gray-5">
+            <div class="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            KI läuft… {{ kiProgress.done }}/{{ kiProgress.total }}
+          </div>
+          <div v-else class="text-sm text-ink-gray-4">{{ offeneZuweisungCount }} nicht zugeordnet</div>
+          <Button size="sm" @click="startKiJob" :disabled="kiJobStatus === 'started'">
+            <span class="flex items-center gap-1.5">
+              <FeatherIcon name="cpu" class="h-3.5 w-3.5"/>
+              KI zuweisen
+            </span>
+          </Button>
+        </div>
+
+        <!-- Buchungs-Cards -->
+        <div v-for="b in offeneBuchungen" :key="b.name"
+             class="bg-white rounded-xl border border-outline-gray-1 p-4 space-y-2 transition-all duration-300"
+             :class="assignedNames.has(b.name) ? 'opacity-0 max-h-0 overflow-hidden p-0 mb-0' : 'max-h-96'">
+
+          <div class="flex justify-between items-start">
+            <div class="min-w-0 flex-1">
+              <p class="font-semibold text-ink-gray-9 truncate">{{ extractEmpfaenger(b.buchungstext) }}</p>
+              <p class="text-xs text-ink-gray-4 truncate mt-0.5">{{ b.buchungstext }}</p>
+            </div>
+            <p class="text-base font-bold ml-3 shrink-0" :class="b.betrag < 0 ? 'text-red-500' : 'text-green-500'">
+              {{ fmtEuro(b.betrag) }}
+            </p>
+          </div>
+
+          <p class="text-xs text-ink-gray-4">{{ fmtDate(b.datum) }}</p>
+
+          <!-- Kategorie-Chips -->
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button v-for="bp in topBudgetposten" :key="bp.name"
+                    @click="quickAssign(b, bp.name)"
+                    class="px-2.5 py-1 text-xs rounded-full border border-outline-gray-2 text-ink-gray-7 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-colors">
+              {{ bp.kategorie || bp.name }}
+            </button>
+            <!-- Mehr Button -->
+            <select @change="e => onMehrSelect(b, e)"
+                    class="px-2.5 py-1 text-xs rounded-full border border-outline-gray-2 text-ink-gray-4 bg-white">
+              <option value="">Mehr...</option>
+              <option v-for="bp in alleBudgetposten" :key="bp.name" :value="bp.name">{{ bp.kategorie || bp.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Leer-State -->
+        <div v-if="offeneBuchungen.length === 0" class="text-center py-12 text-ink-gray-4">
+          <FeatherIcon name="check-circle" class="h-10 w-10 mx-auto mb-2 text-green-400"/>
+          <p class="text-sm">Alle Buchungen sind zugeordnet</p>
+        </div>
+
+        <!-- Regelübersicht -->
+        <div v-if="buchungsregeln.length > 0" class="mt-6">
+          <p class="text-xs font-semibold text-ink-gray-4 uppercase tracking-wide mb-2">Gelernte Muster</p>
+          <div class="space-y-1">
+            <div v-for="r in buchungsregeln" :key="r.name"
+                 class="flex justify-between items-center py-1.5 px-3 bg-surface-gray-1 rounded-lg text-sm">
+              <span class="text-ink-gray-7">{{ r.empfaenger_pattern }}</span>
+              <div class="flex items-center gap-3">
+                <span class="text-ink-gray-4 text-xs">→ {{ r.budgetposten }}</span>
+                <span class="text-ink-gray-3 text-xs">{{ r.match_count }}×</span>
+                <button @click="deleteRegel(r.name)" class="text-ink-gray-3 hover:text-red-500">
+                  <FeatherIcon name="x" class="h-3.5 w-3.5"/>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </template>
 
@@ -372,7 +462,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { useApi } from '../composables/useApi'
 import BankkontoDetail from '../components/BankkontoDetail.vue'
@@ -415,6 +505,93 @@ const nurUnzugeordnet = ref(false)
 const currentPage = ref(1)
 const pageSize = 50
 const totalBuchungen = ref(0)
+
+// Zuweisung Tab State
+const activeTab = ref('buchungen')
+const offeneBuchungen = ref([])
+const offeneZuweisungCount = ref(0)
+const alleBudgetposten = ref([])
+const topBudgetposten = computed(() => alleBudgetposten.value.slice(0, 4))
+const buchungsregeln = ref([])
+const assignedNames = ref(new Set())
+const kiJobStatus = ref('idle')
+const kiProgress = ref({ done: 0, total: 0 })
+let kiPollInterval = null
+
+async function loadOffeneBuchungen() {
+  const res = await call('ktesis.api.bankkonto.get_buchungen', {
+    nur_unzugeordnet: 1, limit: 50, offset: 0
+  })
+  offeneBuchungen.value = Array.isArray(res) ? res : (res?.buchungen || [])
+  offeneZuweisungCount.value = offeneBuchungen.value.length
+}
+
+async function loadBudgetposten() {
+  const res = await call('frappe.client.get_list', { doctype: 'Budgetposten', fields: ['name','kategorie'], limit: 100 })
+  alleBudgetposten.value = res || []
+}
+
+async function loadBuchungsregeln() {
+  const res = await call('ktesis.api.buchungsregel.get_buchungsregeln')
+  buchungsregeln.value = res || []
+}
+
+async function quickAssign(buchung, budgetpostenName) {
+  await update('Bankbuchung', buchung.name, { budgetposten: budgetpostenName })
+  assignedNames.value = new Set([...assignedNames.value, buchung.name])
+  offeneZuweisungCount.value = Math.max(0, offeneZuweisungCount.value - 1)
+
+  const empfaenger = extractEmpfaenger(buchung.buchungstext)
+  if (empfaenger && empfaenger.length > 2) {
+    suggestPattern(empfaenger, budgetpostenName)
+  }
+}
+
+function suggestPattern(empfaenger, budgetpostenName) {
+  const pattern = empfaenger.toUpperCase().split(' ')[0]
+  if (confirm(`Immer "${pattern}" → ${budgetpostenName} zuordnen?`)) {
+    call('ktesis.api.buchungsregel.create_buchungsregel', {
+      empfaenger_pattern: pattern + '*',
+      budgetposten: budgetpostenName
+    }).then(() => loadBuchungsregeln())
+  }
+}
+
+function extractEmpfaenger(buchungstext) {
+  if (!buchungstext) return ''
+  const parts = buchungstext.split(/\s+/)
+  return parts.find(p => p.length > 2 && !/^\d/.test(p)) || parts[0] || ''
+}
+
+async function deleteRegel(name) {
+  await call('ktesis.api.buchungsregel.delete_buchungsregel', { name })
+  await loadBuchungsregeln()
+}
+
+async function startKiJob() {
+  await call('ktesis.api.ai_assign.start_ki_zuweisung')
+  kiJobStatus.value = 'started'
+  kiPollInterval = setInterval(pollKiStatus, 2000)
+}
+
+async function pollKiStatus() {
+  const res = await call('ktesis.api.ai_assign.get_ki_zuweisung_status')
+  if (res?.status === 'finished' || res?.status === 'idle' || res?.status === 'failed') {
+    kiJobStatus.value = res.status === 'started' ? 'started' : 'idle'
+    clearInterval(kiPollInterval)
+    await loadOffeneBuchungen()
+  } else if (res?.progress) {
+    kiProgress.value = { done: res.progress.done || 0, total: res.progress.total || 0 }
+  }
+}
+
+watch(activeTab, (tab) => {
+  if (tab === 'zuweisung') {
+    loadOffeneBuchungen()
+    loadBudgetposten()
+    loadBuchungsregeln()
+  }
+})
 
 const allSelected = computed(() =>
   buchungen.value.length > 0 && buchungen.value.every(b => selectedBuchungen.value.has(b.name))
@@ -573,6 +750,9 @@ function formatDate(val) {
   const d = new Date(val)
   return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
+
+const fmtEuro = formatCurrency
+const fmtDate = formatDate
 
 const filteredList = computed(() => {
   return listData.value.filter((item) => {
