@@ -287,6 +287,7 @@ def delete_all_buchungen() -> dict:
 
 
 @frappe.whitelist()
+@frappe.whitelist()
 def start_ki_zuweisung():
     """Startet KI-Hintergrund-Job fuer automatische Buchungs-Kategorisierung"""
     from ktesis.api.auth import is_ktesis_admin
@@ -307,19 +308,11 @@ def start_ki_zuweisung():
 
 @frappe.whitelist()
 def get_ki_zuweisung_status():
-    """Gibt Status des laufenden KI-Jobs zurueck"""
-    job = frappe.db.get_value("RQ Job",
-        {"job_name": "ki_zuweisung"},
-        ["name", "status", "progress"],
-        as_dict=True,
-        order_by="creation desc"
-    )
-    if not job:
-        return {"status": "idle"}
-    return {
-        "status": job.status,
-        "progress": job.progress or {}
-    }
+    """Gibt Status des laufenden KI-Jobs zurueck (via Cache)"""
+    progress = frappe.cache().get_value("ki_zuweisung_progress") or {}
+    if not progress:
+        return {"status": "idle", "done": 0, "total": 0}
+    return progress
 
 def run_ki_zuweisung_job():
     """Hintergrund-Job: Regeln anwenden, dann KI fuer Rest"""
@@ -338,10 +331,15 @@ def run_ki_zuweisung_job():
     if total == 0:
         return
 
-    _frappe.publish_progress(0, title="KI Zuweisung", description=f"0/{total} Buchungen")
+    def _set_progress(done, total, status="running"):
+        _frappe.cache().set_value("ki_zuweisung_progress",
+            {"status": status, "done": done, "total": total}, expires_in_sec=3600)
 
-    # Budgettoepfe fuer Kontext laden
-    budgetposten = _frappe.get_all("Budgetposten", fields=["name", "titel"], limit=50)
+    _set_progress(0, total)
+
+    # Budgettoepfe fuer Kontext laden — nutze kategorie als key (nicht titel)
+    budgetposten_list = _frappe.get_all("Budgetposten", fields=["name", "kategorie"], limit=50)
+    bp_map = {b.kategorie: b.name for b in budgetposten_list if b.kategorie}
 
     # Batch-Verarbeitung (10 pro Call)
     batch_size = 10
@@ -349,17 +347,17 @@ def run_ki_zuweisung_job():
     for i in range(0, total, batch_size):
         batch = offene[i:i+batch_size]
         try:
-            _ki_assign_batch(batch, budgetposten)
+            for b in batch:
+                result = _keyword_assign(b.buchungstext, bp_map)
+                if result:
+                    _frappe.db.set_value("Bankbuchung", b.name, "budgetposten", result)
             done += len(batch)
-            _frappe.publish_progress(
-                int(done/total*100),
-                title="KI Zuweisung",
-                description=f"{done}/{total} Buchungen"
-            )
+            _set_progress(done, total)
         except Exception as e:
             _frappe.log_error(str(e), "KI Zuweisung Batch Error")
 
     _frappe.db.commit()
+    _set_progress(done, total, status="finished")
 
 def _ki_assign_batch(buchungen, budgetposten):
     """KI-Call fuer einen Batch von Buchungen - Stub, nutzt bestehende ai_assign Logik"""

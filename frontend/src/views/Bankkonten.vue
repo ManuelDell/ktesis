@@ -597,27 +597,40 @@ async function deleteRegel(name) {
 }
 
 async function startKiJob() {
-  await call('ktesis.api.ai_assign.start_ki_zuweisung')
+  const res = await call('ktesis.api.ai_assign.start_ki_zuweisung')
+  if (!res || res.status === 'error') return
   kiJobStatus.value = 'started'
+  if (kiPollInterval) clearInterval(kiPollInterval)
   kiPollInterval = setInterval(pollKiStatus, 2000)
 }
 
 async function pollKiStatus() {
   const res = await call('ktesis.api.ai_assign.get_ki_zuweisung_status')
-  if (res?.status === 'finished' || res?.status === 'idle' || res?.status === 'failed') {
-    kiJobStatus.value = res.status === 'started' ? 'started' : 'idle'
+  if (!res) return
+  kiProgress.value = { done: res.done || 0, total: res.total || 0 }
+  if (res.status === 'finished' || res.status === 'idle') {
+    kiJobStatus.value = 'idle'
     clearInterval(kiPollInterval)
+    kiPollInterval = null
     await loadOffeneBuchungen()
-  } else if (res?.progress) {
-    kiProgress.value = { done: res.progress.done || 0, total: res.progress.total || 0 }
+    await loadBuchungsregeln()
+  } else if (res.status === 'running') {
+    kiJobStatus.value = 'started'
   }
 }
 
-watch(activeTab, (tab) => {
+watch(activeTab, async (tab) => {
   if (tab === 'zuweisung') {
     loadOffeneBuchungen()
     loadBudgetposten()
     loadBuchungsregeln()
+    // Resume polling if job was already running
+    const status = await call('ktesis.api.ai_assign.get_ki_zuweisung_status')
+    if (status?.status === 'running') {
+      kiJobStatus.value = 'started'
+      kiProgress.value = { done: status.done || 0, total: status.total || 0 }
+      if (!kiPollInterval) kiPollInterval = setInterval(pollKiStatus, 2000)
+    }
   }
 })
 
