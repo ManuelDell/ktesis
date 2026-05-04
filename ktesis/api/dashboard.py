@@ -30,21 +30,14 @@ def get_finance_summary() -> dict:
 		km = float(v.kosten_monatlich or 0)
 		kj = float(v.kosten_jaehrlich or 0)
 		r = (v.zahlungsrhythmus or "").strip()
-		if r == "Monatlich":
-			monatlich_gesamt += km
-			jaehrlich_gesamt += km * 12
-		elif r in ("Vierteljaehrlich", "Halbjaehrlich", "Jaehrlich"):
-			if kj:
-				monatlich_gesamt += kj / 12
-				jaehrlich_gesamt += kj
-			else:
-				monatlich_gesamt += km
-				jaehrlich_gesamt += km * 12
-		elif r == "Einmalig":
-			pass
-		else:
-			monatlich_gesamt += km
-			jaehrlich_gesamt += kj if kj else km * 12
+		if r == "Einmalig":
+			continue
+		# Monthly equivalent: use kosten_monatlich if set, else derive from jaehrlich
+		m = km if km else (kj / 12 if kj else 0)
+		# Annual equivalent: use kosten_jaehrlich if set, else derive from monatlich
+		j = kj if kj else (km * 12 if km else 0)
+		monatlich_gesamt += m
+		jaehrlich_gesamt += j
 	vertraege_list = [
 		{"name": v.name, "titel": v.titel, "vertragstyp": v.vertragstyp,
 		 "vertragspartner": v.vertragspartner,
