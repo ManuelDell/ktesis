@@ -3,7 +3,6 @@ import frappe
 
 @frappe.whitelist()
 def get_attachments(doctype, docname):
-	"""Return files attached to a given document."""
 	files = frappe.get_all(
 		"File",
 		filters={
@@ -18,6 +17,18 @@ def get_attachments(doctype, docname):
 
 @frappe.whitelist()
 def delete_attachment(name):
-	"""Delete a file by name."""
 	frappe.delete_doc("File", name, ignore_permissions=False)
 	return {"status": "ok"}
+
+
+@frappe.whitelist()
+def rename_attachment(name, new_name):
+	file_doc = frappe.get_doc("File", name)
+	old_name = file_doc.file_name or ""
+	ext = old_name.rsplit(".", 1)[-1] if "." in old_name else ""
+	new_name = new_name.strip()
+	if ext and not new_name.lower().endswith("." + ext.lower()):
+		new_name = f"{new_name}.{ext}"
+	file_doc.file_name = new_name
+	file_doc.save(ignore_permissions=True)
+	return {"status": "ok", "file_name": file_doc.file_name}

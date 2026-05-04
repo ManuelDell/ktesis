@@ -59,7 +59,7 @@
           <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugschein (Zulassungsbescheinigung Teil I)</p>
           <FileUploader
             :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, private: 1 }"
-            @success="onUploadSuccess"
+            @success="(f) => onUploadSuccessTyped(f, 'FZI')"
             fileTypes=".pdf,.jpg,.jpeg,.png"
           >
             <template #default="{ openFileSelector, uploading, progress }">
@@ -82,7 +82,7 @@
           <p class="text-xs text-ink-gray-5 mb-2">Fahrzeugbrief (Zulassungsbescheinigung Teil II)</p>
           <FileUploader
             :uploadArgs="{ doctype: 'Fahrzeug', docname: props.name, private: 1 }"
-            @success="onUploadSuccess"
+            @success="(f) => onUploadSuccessTyped(f, 'FZII')"
             fileTypes=".pdf,.jpg,.jpeg,.png"
           >
             <template #default="{ openFileSelector, uploading, progress }">
@@ -199,6 +199,39 @@ onMounted(async () => {
     }
   }
 })
+
+async function renameFile(name, baseName) {
+  try {
+    const res = await fetch('/api/method/ktesis.api.attachments.rename_attachment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Frappe-CSRF-Token': window.frappe?.csrf_token || window.csrf_token || '' },
+      body: JSON.stringify({ name, new_name: baseName })
+    })
+    const data = await res.json()
+    return data.message?.file_name || null
+  } catch (e) {
+    return null
+  }
+}
+
+async function onUploadSuccessTyped(file, prefix) {
+  let displayFile = file ? { ...file } : null
+  if (file?.name && prefix) {
+    const kennz = (form.kennzeichen || '').replace(/\s+/g, '-').toUpperCase()
+    const baseName = `${prefix}-${kennz}`
+    const newFileName = await renameFile(file.name, baseName)
+    if (newFileName && displayFile) displayFile.file_name = newFileName
+  }
+  if (displayFile && attachmentList.value?.addFile) {
+    attachmentList.value.addFile(displayFile)
+  } else {
+    await new Promise(r => setTimeout(r, 800))
+    attachmentList.value?.reload()
+  }
+  uploadSuccess.value = true
+  setTimeout(() => { uploadSuccess.value = false }, 2500)
+  setTimeout(() => attachmentList.value?.reload(), 1500)
+}
 
 async function onUploadSuccess(file) {
   if (file && attachmentList.value?.addFile) {
