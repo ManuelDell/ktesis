@@ -271,13 +271,13 @@ def ai_assign_budgetposten(bankkonto: str = None) -> dict:
             except Exception:
                 method = "ki_with_fallback"
                 for b in batch:
-                    bp_name = _keyword_assign(b.buchungstext, bp_map)
+                    bp_name = _keyword_assign(b.buchungstext, bp_map, beschreibungen=beschreibungen)
                     if bp_name:
                         frappe.db.set_value("Bankbuchung", b.name, "budgetposten", bp_name)
                         assigned += 1
     else:
         for b in buchungen:
-            bp_name = _keyword_assign(b.buchungstext, bp_map)
+            bp_name = _keyword_assign(b.buchungstext, bp_map, beschreibungen=beschreibungen)
             if bp_name:
                 frappe.db.set_value("Bankbuchung", b.name, "budgetposten", bp_name)
                 assigned += 1
