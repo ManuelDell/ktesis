@@ -250,6 +250,16 @@
       <!-- Zuweisung -->
       <div v-if="activeTab === 'zuweisung'" class="p-4 space-y-4">
 
+        <!-- KI Status Banner -->
+        <div v-if="kiStatus.type"
+             :class="['rounded-lg p-3 text-sm font-medium flex items-center justify-between',
+                      kiStatus.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
+                      kiStatus.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+                      'bg-blue-50 text-blue-800 border border-blue-200']">
+          <span>{{ kiStatus.message }}</span>
+          <button v-if="kiStatus.type !== 'running'" @click="kiStatus.type = null" class="ml-2 text-current opacity-60 hover:opacity-100">✕</button>
+        </div>
+
         <!-- KI-Aktion Header -->
         <div class="flex items-center justify-between">
           <div v-if="kiJobStatus === 'started'" class="flex items-center gap-2 text-sm text-ink-gray-5">
@@ -259,8 +269,9 @@
           <div v-else class="text-sm text-ink-gray-4">{{ offeneZuweisungCount }} nicht zugeordnet</div>
           <Button size="sm" @click="startKiJob" :disabled="kiJobStatus === 'started'">
             <span class="flex items-center gap-1.5">
-              <FeatherIcon name="cpu" class="h-3.5 w-3.5"/>
-              KI zuweisen
+              <span v-if="kiJobStatus === 'started'" class="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full"></span>
+              <FeatherIcon v-else name="cpu" class="h-3.5 w-3.5"/>
+              {{ kiJobStatus === 'started' ? 'Läuft…' : 'KI zuweisen' }}
             </span>
           </Button>
         </div>
@@ -518,6 +529,7 @@ const buchungsregeln = ref([])
 const assignedNames = ref(new Set())
 const kiJobStatus = ref('idle')
 const kiProgress = ref({ done: 0, total: 0 })
+const kiStatus = ref({ type: null, message: '' })
 let kiPollInterval = null
 
 async function loadOffeneBuchungen() {
@@ -597,25 +609,66 @@ async function deleteRegel(name) {
 }
 
 async function startKiJob() {
-  const res = await call('ktesis.api.ai_assign.start_ki_zuweisung')
-  if (!res || res.status === 'error') return
-  kiJobStatus.value = 'started'
-  if (kiPollInterval) clearInterval(kiPollInterval)
-  kiPollInterval = setInterval(pollKiStatus, 2000)
+  kiStatus.value = { type: 'running', message: 'KI läuft...' }
+  try {
+    const res = await call('ktesis.api.ai_assign.start_ki_zuweisung')
+    if (res?.status === 'already_running') {
+      kiStatus.value = { type: 'running', message: 'KI läuft bereits...' }
+      kiJobStatus.value = 'started'
+      if (kiPollInterval) clearInterval(kiPollInterval)
+      kiPollInterval = setInterval(pollKiStatus, 2000)
+      return
+    }
+    if (res?.status === 'error' || res?.error) {
+      kiStatus.value = { type: 'error', message: res.error || res.message || 'Unbekannter Fehler beim Starten der KI' }
+      kiJobStatus.value = 'idle'
+      return
+    }
+    kiJobStatus.value = 'started'
+    if (kiPollInterval) clearInterval(kiPollInterval)
+    kiPollInterval = setInterval(pollKiStatus, 2000)
+  } catch (e) {
+    kiStatus.value = { type: 'error', message: e?.message || 'Verbindungsfehler beim Starten der KI' }
+    kiJobStatus.value = 'idle'
+  }
 }
 
 async function pollKiStatus() {
-  const res = await call('ktesis.api.ai_assign.get_ki_zuweisung_status')
-  if (!res) return
-  kiProgress.value = { done: res.done || 0, total: res.total || 0 }
-  if (res.status === 'finished' || res.status === 'idle') {
+  try {
+    const res = await call('ktesis.api.ai_assign.get_ki_zuweisung_status')
+    if (!res || res.status === 'idle') {
+      kiStatus.value = { type: 'error', message: 'KI-Job nicht gestartet — API-Key konfiguriert?' }
+      kiJobStatus.value = 'idle'
+      clearInterval(kiPollInterval)
+      kiPollInterval = null
+      return
+    }
+    kiProgress.value = { done: res.done || 0, total: res.total || 0 }
+    if (res.status === 'running') {
+      const pct = res.total > 0 ? Math.round(res.done / res.total * 100) : 0
+      kiStatus.value = { type: 'running', message: `KI läuft... ${res.done}/${res.total} (${pct}%)` }
+      kiJobStatus.value = 'started'
+      return
+    }
+    if (res.status === 'finished') {
+      kiStatus.value = { type: 'success', message: `✓ Fertig — ${res.done} Buchungen zugeordnet` }
+      kiJobStatus.value = 'idle'
+      clearInterval(kiPollInterval)
+      kiPollInterval = null
+      await loadOffeneBuchungen()
+      await loadBuchungsregeln()
+      setTimeout(() => { if (kiStatus.value.type === 'success') kiStatus.value = { type: null, message: '' } }, 6000)
+      return
+    }
+    kiStatus.value = { type: 'error', message: `Unbekannter Status: ${res.status}` }
     kiJobStatus.value = 'idle'
     clearInterval(kiPollInterval)
     kiPollInterval = null
-    await loadOffeneBuchungen()
-    await loadBuchungsregeln()
-  } else if (res.status === 'running') {
-    kiJobStatus.value = 'started'
+  } catch (e) {
+    kiStatus.value = { type: 'error', message: `Statusabfrage fehlgeschlagen: ${e?.message}` }
+    kiJobStatus.value = 'idle'
+    clearInterval(kiPollInterval)
+    kiPollInterval = null
   }
 }
 
@@ -629,6 +682,8 @@ watch(activeTab, async (tab) => {
     if (status?.status === 'running') {
       kiJobStatus.value = 'started'
       kiProgress.value = { done: status.done || 0, total: status.total || 0 }
+      const pct = status.total > 0 ? Math.round(status.done / status.total * 100) : 0
+      kiStatus.value = { type: 'running', message: `KI läuft bereits... ${status.done}/${status.total} (${pct}%)` }
       if (!kiPollInterval) kiPollInterval = setInterval(pollKiStatus, 2000)
     }
   }
