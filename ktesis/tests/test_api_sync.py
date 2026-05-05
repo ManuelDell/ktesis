@@ -172,7 +172,7 @@ class TestDocTypeFieldConsistency(unittest.TestCase):
             self.skipTest("Budget.vue nicht gefunden")
 
         text = vue_file.read_text()
-        used = set(re.findall(r'(?:item|posten|bp)\.([a-z_][a-z0-9_]*)', text))
+        used = set(re.findall(r'(?<!\w)(?:item|posten|bp)\.([a-z_][a-z0-9_]*)', text))
         ignore = {"name", "ampel", "soll", "ist", "diff", "budget", "ueberschritten"}
         unknown = used - bp_fields - ignore
         self.assertEqual(unknown, set(),

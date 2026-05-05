@@ -316,19 +316,27 @@
         </div>
 
         <!-- Regelübersicht -->
-        <div v-if="buchungsregeln.length > 0" class="mt-6">
-          <p class="text-xs font-semibold text-ink-gray-4 uppercase tracking-wide mb-2">Gelernte Muster</p>
-          <div class="space-y-1">
-            <div v-for="r in buchungsregeln" :key="r.name"
-                 class="flex justify-between items-center py-1.5 px-3 bg-surface-gray-1 rounded-lg text-sm">
-              <span class="text-ink-gray-7">{{ r.empfaenger_pattern }}</span>
-              <div class="flex items-center gap-3">
-                <span class="text-ink-gray-4 text-xs">→ {{ r.budgetposten }}</span>
-                <span class="text-ink-gray-3 text-xs">{{ r.match_count }}×</span>
-                <button @click="deleteRegel(r.name)" class="text-ink-gray-3 hover:text-red-500">
-                  <FeatherIcon name="x" class="h-3.5 w-3.5"/>
-                </button>
-              </div>
+        <div class="mt-6">
+          <h3 class="text-sm font-semibold text-ink-gray-7 mb-2 flex items-center gap-1">
+            <FeatherIcon name="list" class="w-4 h-4" />
+            Gespeicherte Regeln ({{ buchungsregeln.length }})
+          </h3>
+          <div v-if="!buchungsregeln.length" class="text-xs text-ink-gray-4 italic py-2">
+            Noch keine Regeln. Buchung zuweisen → "Immer so" wählen.
+          </div>
+          <div v-for="r in buchungsregeln" :key="r.name"
+               class="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-gray-1 mb-1 text-xs">
+            <div class="flex-1 min-w-0">
+              <span class="font-mono text-ink-gray-7">{{ r.empfaenger_pattern }}</span>
+              <span class="mx-1 text-ink-gray-3">→</span>
+              <span class="text-ink-gray-6">{{ getBpKategorie(r.budgetposten) }}</span>
+            </div>
+            <div class="flex items-center gap-2 ml-2 shrink-0">
+              <span class="text-ink-gray-3">{{ r.match_count || 0 }}x</span>
+              <button @click="deleteRegel(r.name)"
+                      class="text-ink-gray-3 hover:text-red-500 transition-colors">
+                <FeatherIcon name="trash-2" class="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
@@ -601,6 +609,11 @@ function extractEmpfaenger(buchungstext) {
   }
   // Kein Präfix → ersten sinnvollen Teil zurückgeben
   return buchungstext.split('Buchungstext:')[0].trim().slice(0, 40) || buchungstext.slice(0, 40)
+}
+
+function getBpKategorie(bpName) {
+  const bp = alleBudgetposten.value.find(b => b.name === bpName)
+  return bp ? bp.kategorie : bpName
 }
 
 async function deleteRegel(name) {

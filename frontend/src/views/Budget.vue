@@ -198,8 +198,9 @@
               <td
                 v-for="m in jahresData"
                 :key="m.monat"
-                class="py-2 px-3 text-right"
+                class="py-2 px-3 text-right cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors"
                 :class="(m.kategorien.find(k => k.kategorie === kat)?.ueberschritten) ? 'text-ink-red-4 font-medium' : 'text-ink-gray-6'"
+                @click="openDetail(kat, m.monat)"
               >
                 {{ formatCurrency(Math.abs(m.kategorien.find(k => k.kategorie === kat)?.ist || 0)) }}
               </td>
@@ -226,6 +227,64 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Buchungs-Drawer -->
+      <div v-if="detailDrawer.open"
+           class="fixed inset-0 z-50 flex justify-end"
+           @click.self="detailDrawer.open = false">
+        <div class="bg-white w-full max-w-lg h-full shadow-xl flex flex-col overflow-hidden">
+          <!-- Header -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-outline-gray-2">
+            <div>
+              <div class="font-semibold text-ink-gray-8">{{ detailDrawer.kat }}</div>
+              <div class="text-xs text-ink-gray-4">
+                {{ ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'][detailDrawer.monat-1] }}
+                {{ selectedJahr }}
+              </div>
+            </div>
+            <button @click="detailDrawer.open = false" class="text-ink-gray-4 hover:text-ink-gray-8 p-1">
+              <FeatherIcon name="x" class="w-5 h-5" />
+            </button>
+          </div>
+          <!-- Loading -->
+          <div v-if="detailDrawer.loading" class="flex-1 flex items-center justify-center text-ink-gray-4">
+            Lade Buchungen...
+          </div>
+          <!-- Buchungen list -->
+          <div v-else class="flex-1 overflow-y-auto divide-y divide-outline-gray-1">
+            <div v-if="!detailDrawer.buchungen.length" class="text-center py-8 text-ink-gray-4 text-sm">
+              Keine Buchungen in diesem Monat
+            </div>
+            <div v-for="b in detailDrawer.buchungen" :key="b.name"
+                 class="px-4 py-3 hover:bg-surface-gray-1">
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <div class="text-xs text-ink-gray-5">{{ b.datum }}</div>
+                <div class="text-sm font-medium" :class="b.betrag >= 0 ? 'text-ink-green-3' : 'text-ink-gray-8'">
+                  {{ formatCurrency(b.betrag) }}
+                </div>
+              </div>
+              <div class="text-xs text-ink-gray-6 mb-2 line-clamp-2">{{ b.buchungstext }}</div>
+              <!-- Reassign dropdown -->
+              <select
+                class="text-xs border border-outline-gray-2 rounded px-2 py-1 bg-white w-full"
+                :value="b.budgetposten"
+                @change="e => reassignBuchung(b, e.target.value)"
+              >
+                <option v-for="bp in alleBudgetposten" :key="bp.name" :value="bp.name">
+                  {{ bp.kategorie }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <!-- Footer: total -->
+          <div class="px-4 py-3 border-t border-outline-gray-2 bg-surface-gray-1">
+            <div class="flex justify-between text-sm font-semibold">
+              <span>Summe</span>
+              <span>{{ formatCurrency(detailDrawer.buchungen.reduce((s,b) => s + (b.betrag||0), 0)) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -251,6 +310,15 @@ const editableBudgets = ref([])
 let _keyCounter = 0
 const expandedKat = ref(null)
 const buchungenByKat = ref({})
+
+const detailDrawer = ref({
+  open: false,
+  kat: '',
+  monat: 0,
+  loading: false,
+  buchungen: [],
+})
+const alleBudgetposten = ref([])
 
 const viewMode = ref('monat')
 const jahresData = ref([])
@@ -384,6 +452,64 @@ async function toggleKat(kat) {
   buchungenByKat.value[kat] = rows || []
 }
 
+async function loadBudgetposten() {
+  const res = await call('frappe.client.get_list', {
+    doctype: 'Budgetposten',
+    fields: ['name', 'kategorie'],
+    limit: 50,
+  })
+  alleBudgetposten.value = (res || []).filter(b => b.kategorie && b.kategorie !== 'KI')
+}
+
+async function openDetail(kat, monat) {
+  detailDrawer.value = { open: true, kat, monat, loading: true, buchungen: [] }
+
+  // Find budgetposten name for this kategorie
+  const bp = alleBudgetposten.value.find(b => b.kategorie === kat)
+  if (!bp) {
+    detailDrawer.value.loading = false
+    return
+  }
+
+  try {
+    // Get start/end of month
+    const year = selectedJahr.value
+    const start = `${year}-${String(monat).padStart(2,'0')}-01`
+    const end = new Date(year, monat, 0)
+    const endStr = `${year}-${String(monat).padStart(2,'0')}-${String(end.getDate()).padStart(2,'0')}`
+
+    const res = await call('frappe.client.get_list', {
+      doctype: 'Bankbuchung',
+      filters: [
+        ['budgetposten', '=', bp.name],
+        ['datum', '>=', start],
+        ['datum', '<=', endStr],
+      ],
+      fields: ['name', 'buchungstext', 'betrag', 'datum', 'budgetposten'],
+      order_by: 'datum asc',
+      limit: 200,
+    })
+    detailDrawer.value.buchungen = res || []
+  } catch(e) {
+    console.error(e)
+  } finally {
+    detailDrawer.value.loading = false
+  }
+}
+
+async function reassignBuchung(buchung, newBpName) {
+  await call('frappe.client.set_value', {
+    doctype: 'Bankbuchung',
+    name: buchung.name,
+    fieldname: 'budgetposten',
+    value: newBpName,
+  })
+  // Remove from current drawer list
+  detailDrawer.value.buchungen = detailDrawer.value.buchungen.filter(b => b.name !== buchung.name)
+  // Reload jahres data
+  await loadJahresData()
+}
+
 function formatDate(val) {
   if (!val) return '—'
   return new Date(val).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -404,5 +530,8 @@ watch(selectedJahr, () => {
   if (viewMode.value === 'jahr') loadJahresData()
 })
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  loadBudgetposten()
+})
 </script>
