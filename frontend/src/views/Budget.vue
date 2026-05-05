@@ -199,12 +199,19 @@
                 v-for="m in jahresData"
                 :key="m.monat"
                 class="py-2 px-3 text-right cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                :class="(m.kategorien.find(k => k.kategorie === kat)?.ueberschritten) ? 'text-ink-red-4 font-medium' : 'text-ink-gray-6'"
+                :class="(m.kategorien.find(k => k.kategorie === kat)?.ist || 0) > 0
+                  ? 'text-ink-green-3 font-medium'
+                  : (m.kategorien.find(k => k.kategorie === kat)?.ueberschritten)
+                    ? 'text-ink-red-4 font-medium'
+                    : 'text-ink-gray-6'"
                 @click="openDetail(kat, m.monat)"
               >
                 {{ formatCurrency(Math.abs(m.kategorien.find(k => k.kategorie === kat)?.ist || 0)) }}
               </td>
-              <td class="py-2 px-3 text-right font-semibold text-ink-gray-8">
+              <td class="py-2 px-3 text-right font-semibold"
+                :class="jahresData.reduce((sum, m) => sum + (m.kategorien.find(k => k.kategorie === kat)?.ist || 0), 0) > 0
+                  ? 'text-ink-green-3'
+                  : 'text-ink-gray-8'">
                 {{ formatCurrency(Math.abs(jahresData.reduce((sum, m) => sum + (m.kategorien.find(k => k.kategorie === kat)?.ist || 0), 0))) }}
               </td>
             </tr>
