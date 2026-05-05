@@ -364,17 +364,15 @@ def delete_all_buchungen() -> dict:
 
 
 @frappe.whitelist()
-@frappe.whitelist()
 def start_ki_zuweisung():
     """Startet KI-Hintergrund-Job fuer automatische Buchungs-Kategorisierung"""
     from ktesis.api.auth import is_ktesis_admin
     if not is_ktesis_admin():
         frappe.throw(frappe._("Nur Ktesis Admin"), frappe.PermissionError)
-    # Pruefe ob schon ein Job laeuft
-    running = frappe.db.get_value("RQ Job",
-        {"job_name": "ki_zuweisung", "status": ["in", ["queued", "started"]]}, "name")
-    if running:
-        return {"status": "already_running", "job_id": running}
+    # Pruefe ob schon ein Job laeuft (via Cache — kein RQ Job DocType noetig)
+    progress = frappe.cache().get_value("ki_zuweisung_progress") or {}
+    if progress.get("status") == "running":
+        return {"status": "already_running"}
     frappe.enqueue(
         "ktesis.api.ai_assign.run_ki_zuweisung_job",
         queue="long",
