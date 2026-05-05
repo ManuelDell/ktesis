@@ -194,9 +194,9 @@ def _keyword_assign(buchungstext: str, bp_map: dict, betrag: float = 0, beschrei
                 return bp_map.get(kat)
         if income_cats and betrag > 0:
             return bp_map.get(income_cats[0])
-        return None
+        # Kein ki_beschreibung-Match → weiter zu Phase 2
 
-    # Phase 2: Hardcoded KEYWORDS fallback (for setups without ki_beschreibung)
+    # Phase 2: Hardcoded KEYWORDS fallback
     def _norm(s):
         return s.lower().replace("ä","ae").replace("ö","oe").replace("ü","ue").replace("ß","ss").replace(" ","").replace("&","")
     bp_norm = {_norm(k): v for k, v in bp_map.items()}
