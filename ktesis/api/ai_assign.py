@@ -412,7 +412,9 @@ def run_ki_zuweisung_job():
     settings = _get_settings()
     bp_list = _frappe.get_all("Budgetposten", fields=["name", "kategorie", "ki_beschreibung"])
     bp_map = {b.kategorie: b.name for b in bp_list}
-    
+    beschreibungen = {b.kategorie: (b.get("ki_beschreibung") or "") for b in bp_list}
+    kategorien = list(bp_map.keys())
+
     offene = _frappe.get_all("Bankbuchung",
         filters=[["budgetposten", "is", "not set"]],
         fields=["name", "buchungstext", "betrag"], limit=500)
@@ -435,8 +437,6 @@ def run_ki_zuweisung_job():
     
     # Schritt 4: LLM-Pass für verbleibende
     if ki_batch and settings.get("aktiv") and settings.get("api_key"):
-        beschreibungen = {b.kategorie: (b.get("ki_beschreibung") or "") for b in bp_list}
-        kategorien = list(bp_map.keys())
         batch_size = 15
         for i in range(0, len(ki_batch), batch_size):
             texts = ki_batch[i:i+batch_size]
